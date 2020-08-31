@@ -1,0 +1,70 @@
+\subsection{Toolchain Options}
+\begin{frame}
+  \frametitle{ABI}
+  \begin{itemize}
+  \item When building a toolchain, the ABI used to generate binaries
+    needs to be defined
+  \item ABI, for {\em Application Binary Interface}, defines the
+    calling conventions (how function arguments are passed, how the
+    return value is passed, how system calls are made) and the
+    organization of structures (alignment, etc.)
+  \item All binaries in a system are typically compiled with the same ABI,
+    and the kernel must understand this ABI.
+  \item On ARM, two main ABIs: {\em OABI} and {\em EABI}
+    \begin{itemize}
+    \item Nowadays everybody uses {\em EABI}
+    \end{itemize}
+  \item On MIPS, several ABIs: {\em o32, o64, n32, n64}
+  \item {\fontsize{10}{15} \url{https://en.wikipedia.org/wiki/Application_Binary_Interface}}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Floating point support}
+  \begin{itemize}
+  \item Some processors have a floating point unit, some others do not.
+    \begin{itemize}
+    \item For example, many ARMv4 and ARMv5 CPUs do not have a
+      floating point unit.  Since ARMv7, a VFP unit is mandatory.
+    \end{itemize}
+  \item For processors having a floating point unit, the toolchain
+    should generate {\em hard float} code, in order to use the
+    floating point instructions directly
+  \item For processors without a floating point unit, two solutions
+    \begin{itemize}
+    \item Generate {\em hard float code} and rely on the kernel to
+      emulate the floating point instructions. This is very slow.
+    \item Generate {\em soft float code}, so that instead of
+      generating floating point instructions, calls to a user space
+      library are generated
+    \end{itemize}
+  \item Decision taken at toolchain configuration time
+  \item Also possible to configure which floating point unit should be used
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CPU optimization flags}
+  \begin{itemize}
+  \item A set of cross-compiling tools is specific to a CPU architecture (ARM,
+    x86, MIPS, PowerPC)
+  \item However, gcc offers further options:
+    \begin{itemize}
+    \item \code{-march} allows to select a specific target instruction set
+    \item \code{-mtune} allows to optimize code for a specific CPU
+    \item For example: \code{-march=armv7 -mtune=cortex-a8}
+    \item \code{-mcpu=cortex-a8} can be used instead to allow gcc to infer the target
+      instruction set (\code{-march=armv7}) and cpu optimizations (\code{-mtune=cortex-a8})
+    \item \url{https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html}
+    \end{itemize}
+  \item At the toolchain compilation time, values can be chosen. They are used:
+    \begin{itemize}
+    \item As the default values for the cross-compiling tools, when no
+      other \code{-march}, \code{-mtune}, \code{-mcpu} options are
+      passed
+    \item To compile the C library
+    \end{itemize}
+  \item Even if the C library has been compiled for armv5t, it doesn't
+    prevent from compiling other programs for armv7
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,116 @@
+\subchapter{Build the bootloader}{Objective: compile and install the
+bootloader.}
+
+After this lab, you will be able to compile U-Boot for your target
+platform and run it from a micro SD card provided by your instructor.
+
+\section{Setup}
+
+Go to the \code{~/boot-time-labs/bootloader/u-boot/} directory.
+
+Let's use the 2019.01 version:
+\begin{verbatim}
+git checkout v2019.01
+\end{verbatim}
+
+\section{Compiling environment}
+
+If the previous Buildroot lab is already over, we can use the
+toolchain it built to compile our bootloader and kernel:
+
+\begin{verbatim}
+export PATH=$HOME/boot-time-labs/rootfs/buildroot/output/host/bin:$PATH
+export CROSS_COMPILE=arm-buildroot-linux-uclibcgnueabihf-
+\end{verbatim}
+
+Otherwise, let's take a cross-compiling toolchain provided by Ubuntu:
+
+\begin{verbatim}
+sudo apt install gcc-arm-linux-gnueabihf
+export CROSS_COMPILE=arm-linux-gnueabihf-
+\end{verbatim}
+
+You will need the same settings when you compile the kernel too, and
+when you recompiling U-Boot and the kernel to optimize them. Let's make
+such settings permanent by adding the below lines at the end of your
+\code{~/.bashrc} file:
+
+\begin{verbatim}
+export PATH=$HOME/boot-time-labs/rootfs/buildroot/output/host/bin:$PATH
+export CROSS_COMPILE=arm-buildroot-linux-uclibcgnueabihf-
+\end{verbatim}
+
+\section{Configuring U-Boot}
+
+Let's use a ready-made U-Boot configuration for the Beaglebone Black
+board (you can find such configuration files in the \code{configs/}
+directory:
+
+\begin{verbatim}
+make am335x_boneblack_defconfig
+\end{verbatim}
+
+\section{Compiling U-Boot}
+
+Just run:
+\begin{verbatim}
+make
+\end{verbatim}
+
+or, to compile faster:
+
+\begin{verbatim}
+make -j 8
+\end{verbatim}
+
+This runs 8 compiler jobs in parallel (for example if you have 4 CPU
+cores on your workstation... using more jobs than cores guarantees that
+the CPUs and I/Os are always fully loaded, for optimum performance.
+
+You can safely ignore the warnings that you get at the end of the build
+job. They are meant to draw the attention to OMAP sub-maintainers in
+U-Boot, to remind them that they should update their code that is
+using deprecated code infrastructure.
+
+At the end, you have \code{MLO} and \code{u-boot.img} files that we will
+put on a micro SD card for booting.
+
+
+\input{../common/boneblack-sdcard-preparation.tex}
+
+\section{Booting your new bootloader}
+
+On a board in a normal state, there should be a bootloader on the on-board MMC
+(eMMC) storage, and this will prevent you from using a bootloader on an
+external SD card (unless you hold the \code{USER} button while powering
+up your board, which is just suitable for exceptional needs).
+
+Therefore, to override this behavior and use the external SD card,
+instead, let's wipe out the \code{MLO} file on the eMMC.
+
+Power up or reset your board, and in the U-Boot prompt, run:
+
+\begin{verbatim}
+fatls mmc 1
+\end{verbatim}
+
+You should see the \code{MLO} file in the list of files. Let's remove it
+by issuing the below command (erasing the first 1MiB on the eMMC):
+
+\begin{verbatim}
+mmc dev 1
+mmc erase 0 100000
+\end{verbatim}
+
+You can now see that \code{fatls mmc 1} no longer sees any file.
+
+If your board doesn't boot at all, please fix it first using our instructions
+on
+\url{https://raw.githubusercontent.com/bootlin/training-materials/master/lab-data/common/bootloader/beaglebone-black/README.txt}.
+
+Now, copy your newly compiled \code{MLO} and \code{u-boot.img} files to
+the SD card's \code{boot} partition, and after cleanly unmounting this
+partition, insert the SD card into the board and reset it.
+
+You should now see your board booting with your own \code{MLO} and U-Boot
+binaries (the versions and compiled dates are shown in the console). 

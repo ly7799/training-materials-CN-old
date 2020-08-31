@@ -1,0 +1,369 @@
+\section{BSP Layers}
+
+\subsection{Introduction to BSP layers in the Yocto Project}
+
+\begin{frame}{BSP layers}
+  \begin{center}
+    \includegraphics[height=0.8\textheight]{slides/yocto-bsp/yocto-bsp-overview.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Overview}
+  \begin{itemize}
+    \item BSP layers are device specific layers. They hold metadata
+      with the purpose of supporting specific hardware devices.
+    \item BSP layers describe the hardware features and often provide
+      a custom kernel and bootloader with the required modules and
+      drivers.
+    \item BSP layers can also provide additional software, designed
+      to take advantage of the hardware features.
+    \item As a layer, it is integrated into the build system as we
+      previously saw.
+    \item A good practice is to name it \code{meta-<bsp_name>}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{BSP layers Specifics}
+  \begin{itemize}
+    \item BSP layers are a subset of the layers.
+    \item In addition to package recipes and build tasks, they often
+      provide:
+      \begin{itemize}
+        \item Hardware configuration files (\code{machines}).
+        \item Bootloader, kernel and display support and
+          configuration.
+        \item Pre-built user binaries.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Hardware configuration files}
+
+\begin{frame}
+  \frametitle{Overview 1/2}
+  \begin{itemize}
+    \item A layer provides one machine file (hardware configuration
+      file) per machine it supports.
+    \item These configuration files are stored under
+      \code{meta-<bsp_name>/conf/machine/*.conf}
+    \item The file names correspond to the values set in the
+      \code{MACHINE} configuration variable.
+      \begin{itemize}
+        \item \code{meta-ti/conf/machine/beaglebone.conf}
+        \item \code{MACHINE = "beaglebone"}
+      \end{itemize}
+    \item Each machine should be described in the \code{README} file
+      of the BSP.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Overview 2/2}
+  \begin{itemize}
+    \item The hardware configuration file contains configuration
+      variables related to the architecture and to the machine
+      features.
+    \item Some other variables help customize the kernel image or the
+      filesystems used.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Machine configuration}
+  \begin{description}
+    \item[TARGET\_ARCH] The architecture of the device being built.
+    \item[PREFERRED\_PROVIDER\_virtual/kernel] The default kernel.
+    \item[MACHINE\_FEATURES] List of hardware features provided by the
+      machine, e.g. \code{usbgadget usbhost screen wifi}
+    \item[SERIAL\_CONSOLES] Speed and device for the serial console to
+      attach. Passed to the kernel as the \code{console} parameter,
+      e.g. \code{115200;ttyS0}
+    \item[KERNEL\_IMAGETYPE] The type of kernel image to build, e.g.
+      \code{zImage}
+  \end{description}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\code{MACHINE_FEATURES}}
+  \begin{itemize}
+    \item Lists the hardware features provided by the machine.
+    \item These features are used by package recipes to enable or
+      disable functionalities.
+    \item Some packages are automatically added to the resulting root
+    filesystem depending on the feature list.
+    \item The feature \code{bluetooth}:
+      \begin{itemize}
+        \item Asks the \code{bluez} daemon to be built and added to
+          the image.
+        \item Enables bluetooth support in \code{ConnMan}.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{conf/machine/include/cfa10036.inc}}
+  \begin{block}{}
+    \begin{minted}[fontsize=\scriptsize]{sh}
+# Common definitions for cfa-10036 boards
+include conf/machine/include/imx-base.inc
+include conf/machine/include/tune-arm926ejs.inc
+
+SOC_FAMILY = "mxs:mx28:cfa10036"
+
+PREFERRED_PROVIDER_virtual/kernel ?= "linux-cfa"
+PREFERRED_PROVIDER_virtual/bootloader ?= "barebox"
+IMAGE_BOOTLOADER = "barebox"
+BAREBOX_BINARY = "barebox"
+IMAGE_FSTYPES_mxs = "tar.bz2 barebox.mxsboot-sdcard sdcard.gz"
+IMXBOOTLETS_MACHINE = "cfa10036"
+
+KERNEL_IMAGETYPE = "zImage"
+KERNEL_DEVICETREE = "imx28-cfa10036.dtb"
+# we need the kernel to be installed in the final image
+IMAGE_INSTALL_append = " kernel-image kernel-devicetree"
+SDCARD_ROOTFS ?= "${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.ext3"
+SERIAL_CONSOLE = "115200 ttyAMA0"
+MACHINE_FEATURES = "usbgadget usbhost vfat"
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{\code{conf/machine/cfa10057.conf}}
+  \begin{block}{}
+    \begin{minted}[fontsize=\small]{sh}
+#@TYPE: Machine
+#@NAME: Crystalfontz CFA-10057
+#@SOC: i.MX28
+#@DESCRIPTION: Machine configuration for CFA-10057, also called CFA-920
+#@MAINTAINER: Alexandre Belloni <alexandre.belloni@bootlin.com>
+
+include conf/machine/include/cfa10036.inc
+
+KERNEL_DEVICETREE += "imx28-cfa10057.dtb"
+
+MACHINE_FEATURES += "touchscreen"
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\subsection{Bootloader}
+
+\begin{frame}
+  \frametitle{Default bootloader 1/2}
+  \begin{itemize}
+    \item By default the bootloader used is the mainline version of
+      \code{U-Boot}, with a fixed version (per Poky release).
+    \item All the magic is done in
+      \code{meta/recipes-bsp/u-boot/u-boot.inc}
+    \item Some configuration variables used by the U-Boot recipe can
+      be customized, in the machine file.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Default bootloader 2/2}
+  \begin{description}
+    \item[SPL\_BINARY] If an SPL is built, describes the name of the
+      output binary. Defaults to an empty string.
+    \item[UBOOT\_SUFFIX] \code{bin} (default) or \code{img}.
+    \item[UBOOT\_MACHINE] The target used to build the configuration.
+    \item[UBOOT\_ENTRYPOINT] The bootloader entry point.
+    \item[UBOOT\_LOADADDRESS] The bootloader load address.
+    \item[UBOOT\_MAKE\_TARGET] Make target when building the
+      bootloader.  Defaults to \code{all}.
+  \end{description}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Customize the bootloader}
+  \begin{itemize}
+    \item It is possible to support a custom U-Boot by creating an
+      extended recipe and to append extra metadata to the original
+      one.
+    \item This works well when using a mainline version of U-Boot.
+    \item Otherwise it is possible to create a custom recipe.
+      \begin{itemize}
+        \item Try to still use
+          \code{meta/recipes-bsp/u-boot/u-boot.inc}
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Kernel}
+
+\begin{frame}
+  \frametitle{Linux kernel recipes in Yocto}
+  \begin{itemize}
+    \item There are basically two ways of compiling a kernel in the
+      Yocto Project:
+      \begin{itemize}
+        \item By using the \code{linux-yocto} packages, provided in
+          Poky.
+        \item By using a fully custom kernel recipe.
+      \end{itemize}
+    \item The kernel used is selected in the machine file thanks to:
+      \code{PREFERRED_PROVIDER_virtual/kernel}
+    \item Its version is defined with:
+      \code{PREFERRED_VERSION_<kernel_provider>}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux Yocto 1/4}
+  \begin{itemize}
+    \item \code{linux-yocto} is a generic set of recipes for building
+      mainline Linux kernel images.
+    \item \code{PREFERRED_PROVIDER_virtual/kernel = "linux-yocto"}
+    \item \code{PREFERRED_VERSION_linux-yocto = "3.14\%"}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Linux Yocto 2/4}
+  \begin{itemize}
+    \item Like other appended recipes, patches can be added by filling
+      \code{SRC_URI} with \code{.patch} and/or \code{.diff} files.
+    \item The kernel configuration must also be provided, and the file
+      containing it must be called \code{defconfig}.
+      \begin{itemize}
+        \item This can be generated from a Linux source tree, by using
+          \code{make savedefconfig}
+        \item The configuration can be split in several files, by
+          using the \code{.cfg} extension. It is the best practice
+          when adding new features:
+          \begin{block}{}
+            \begin{minted}{sh}
+SRC_URI += "file://defconfig        \
+            file://nand-support.cfg \
+            file://ethernet-support.cfg"
+            \end{minted}
+          \end{block}
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux Yocto 3/4}
+  \begin{itemize}
+    \item Configuration fragments can be generated directly with the
+      \code{bitbake} command:
+      \begin{enumerate}
+        \item Configure the kernel following its recipe
+          instructions: \code{bitbake -c kernel_configme linux-yocto}
+        \item Edit the configuration:
+          \code{bitbake -c menuconfig linux-yocto}
+        \item Save the configuration differences:
+          \code{bitbake -c diffconfig linux-yocto}
+          \begin{itemize}
+            \item The differences will be saved at
+              \code{$WORKDIR/fragment.cfg}
+          \end{itemize}
+      \end{enumerate}
+    \item After integrating configuration fragments into the appended
+      recipe, you can check everything is fine by running:
+      \code{bitbake -c kernel_configcheck -f linux-yocto}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux Yocto 4/4}
+  \begin{itemize}
+    \item Another way of configuring \code{linux-yocto} is by using
+      \emph{Advanced Metadata}.
+    \item It is a powerful way of splitting the configuration and the
+      patches into several pieces.
+    \item It is designed to provide a very configurable kernel.
+    \item The full documentation can be found at
+      \url{https://www.yoctoproject.org/docs/2.5/kernel-dev/kernel-dev.html\#kernel-dev-advanced}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux Yocto: Kernel Metadata 1/4}
+  \begin{itemize}
+    \item Kernel Metadata is a way to organize and to split the
+      kernel configuration and patches in little pieces each providing
+      support for one feature.
+    \item Two main configuration variables help taking advantage of
+      this:
+      \begin{description}
+        \item[LINUX\_KERNEL\_TYPE] \code{standard} (default),
+          \code{tiny} or \code{preempt-rt}
+          \begin{itemize}
+            \item \code{standard}: generic Linux kernel policy.
+            \item \code{tiny}: bare minimum configuration, for small
+              kernels.
+            \item \code{preempt-rt}: applies the \code{PREEMPT_RT}
+              patch.
+          \end{itemize}
+        \item[KERNEL\_FEATURES] List of features to enable. Features
+          are sets of patches and configuration fragments.
+      \end{description}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux Yocto: Kernel Metadata 2/4}
+  \begin{itemize}
+    \item Kernel Metadata can be stored in the \code{linux-yocto}
+      recipe space.
+    \item It must be under \code{$FILESEXTRAPATHS}. A best practice
+      is to follow this directory hierarchy:
+      \begin{description}
+        \item[bsp/]
+        \item[cfg/]
+        \item[features/]
+        \item[ktypes/]
+        \item[patches/]
+      \end{description}
+    \item Kernel Metadata are divided into 3 file types:
+      \begin{itemize}
+        \item Description files, ending in \code{.scc}
+        \item Configuration fragments
+        \item Patches
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Linux Yocto: Kernel Metadata 3/4}
+  \begin{itemize}
+    \item Kernel Metadata description files have their own syntax,
+      used to describe the feature provided and which patches and
+      configuration fragments to use.
+    \item Simple example, \code{features/smp.scc}
+      \begin{block}{}
+        \begin{minted}{sh}
+define KFEATURE_DESCRIPTION "Enable SMP"
+
+kconf hardware smp.cfg
+patch smp-support.patch
+        \end{minted}
+      \end{block}
+    \item To integrate the feature into the kernel image:
+      \code{KERNEL_FEATURES += "features/smp.scc"}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux Yocto: Kernel Metadata 4/4}
+  \begin{itemize}
+    \item \code{.scc} syntax description:
+      \begin{description}
+        \item[\code{branch <ref>}] Create a new branch relative to the
+          current one.
+        \item[\code{define}] Defines variables.
+        \item[\code{include <scc file>}] Include another description
+          file. Parsed inline.
+        \item[\code{kconf [hardware|non-hardware] <cfg file>}] Queues
+          a configuration fragment, to merge it into Linux's
+          \code{.config}
+        \item[\code{git merge <branch>}] Merge \code{branch} into the
+          current git branch.
+        \item[\code{patch <patch file>}] Applies \code{patch file} to
+          the current git branch.
+      \end{description}
+  \end{itemize}
+\end{frame}

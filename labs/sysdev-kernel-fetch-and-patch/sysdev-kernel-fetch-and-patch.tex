@@ -1,0 +1,73 @@
+\subchapter{Kernel sources}{Objective: Learn how to get the kernel
+  sources and patch them.}
+
+After this lab, you will be able to:
+\begin{itemize}
+\item Get the kernel sources from the official location
+\item Apply kernel patches
+\end{itemize}
+
+\section{Setup}
+
+Create the \code{$HOME/__SESSION_NAME__-labs/kernel} directory and go into it.
+
+\section{Get the sources}
+
+Go to the Linux kernel web site (\url{https://kernel.org/}) and
+identify the latest stable version.
+
+Just to make sure you know how to do it, check the version of the
+Linux kernel running on your machine.
+
+\ifdefstring{\labboard}{discovery}{
+We will use \code{linux-4.19.x}, which this lab was tested with.
+
+To practice with the \code{patch} command later, download the full 4.18
+sources. Unpack the archive, which creates a \code{linux-4.18}
+directory.
+}{
+We will use \code{linux-5.8.x}, which this lab was tested with.
+
+To practice with the \code{patch} command later, download the full 5.7
+sources. Unpack the archive, which creates a \code{linux-5.7}
+directory.
+}
+
+Remember that you can use \code{wget <URL>} on the command
+line to download files.
+
+\section{Apply patches}
+
+\ifdefstring{\labboard}{discovery}{
+Download the patch files corresponding to the latest 4.19 stable
+release: a first patch to move from 4.18 to 4.19 and if one exists,
+a second patch to move from 4.19 to 4.19.9.
+
+We need to use 4.19.9 precisely, because we will apply another patch
+on top of that to add support for the STM32 platform.
+}{
+Download the patch files corresponding to the latest 5.8 stable
+release: a first patch to move from 5.7 to 5.8 and if one exists,
+a second patch to move from 5.8 to 5.8.x.
+}
+
+Without uncompressing them to a separate file, apply the patches to the Linux
+source directory.
+
+\ifdefstring{\labboard}{discovery}{
+  We need to apply another patch to get full support of the STM32
+  platform, which was not completely in the official Linux kernel as
+  of Linux 4.19.
+
+  Apply the patch named
+  \code{$HOME/__SESSION_NAME__-labs/linux-stm32/stm32mp157_support.patch}}{}
+
+View one of the patch files with \code{vi} or \code{gvim}
+(if you prefer a graphical editor), to understand the information carried
+by such a file. How are described added or removed files?
+
+\ifdefstring{\labboard}{discovery}{
+Rename the \code{linux-4.18} directory to \code{linux-4.19.<x>}.
+}{
+Rename the \code{linux-5.7} directory to \code{linux-5.8.<x>}.
+}

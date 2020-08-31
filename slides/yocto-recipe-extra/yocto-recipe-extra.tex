@@ -1,0 +1,294 @@
+\section{Writing recipes - going further}
+
+\subsection{Packages features}
+
+\begin{frame}
+  \frametitle{Benefits}
+  \begin{itemize}
+    \item Features can be built depending on the needs.
+    \item This allows to avoid compiling all features in a software
+      component when only a few are required.
+    \item A good example is \code{ConnMan}: Bluetooth support
+      is built only if there is Bluetooth on the target.
+    \item The \code{PACKAGECONFIG} variable is used to configure the
+      build on a per feature granularity, for packages.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\code{PACKAGECONFIG}}
+  \begin{itemize}
+    \item \code{PACKAGECONFIG} takes the list of features to enable.
+    \item \code{PACKAGECONFIG[feature]} takes up to four arguments,
+      separated by commas:
+      \begin{enumerate}
+        \item Argument used by the configuration task if the feature
+          is enabled (\code{EXTRA_OECONF}).
+        \item Argument added to \code{EXTRA_OECONF} if the feature is
+          disabled.
+        \item Additional build dependency (\code{DEPENDS}), if enabled.
+        \item Additional runtime dependency (\code{RDEPENDS}), if enabled.
+      \end{enumerate}
+    \item Unused arguments can be omitted or left blank.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: from \code{ConnMan}}
+  \begin{block}{}
+  \begin{minted}{sh}
+PACKAGECONFIG ??= "wifi openvpn"
+
+PACKAGECONFIG[wifi] = "--enable-wifi,                 \
+                       --disable-wifi,                \
+                       wpa-supplicant,                \
+                       wpa-supplicant"
+PACKAGECONFIG[bluez] = "--enable-bluetooth,           \
+                        --disable-bluetooth,          \
+                        bluez5,                       \
+                        bluez5"
+PACKAGECONFIG[openvpn] = "--enable-openvpn,           \
+                          --disable-openvpn,          \
+                          ,                           \
+                          openvpn"
+  \end{minted}
+  \end{block}
+\end{frame}
+
+\subsection{Conditional features}
+
+\begin{frame}[fragile]
+  \frametitle{Conditional features}
+  \begin{itemize}
+    \item Some values can be set dynamically, thanks to a set of
+      functions:
+    \item \code{bb.utils.contains(variable, checkval, trueval,
+      falseval, d)}: if \code{checkval} is found in
+      \code{variable}, \code{trueval} is returned; otherwise
+      \code{falseval} is used.
+    \item Example:
+      \begin{block}{}
+      \begin{minted}[fontsize=\small]{sh}
+PACKAGECONFIG ??= "                                                       \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wifi','wifi', '', d)}            \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth','bluetooth', '', d)}  \
+    ${@bb.utils.contains('DISTRO_FEATURES', '3g','3g', '', d)}"
+      \end{minted}
+      \end{block}
+  \end{itemize}
+\end{frame}
+
+\subsection{Python tasks}
+
+\begin{frame}
+  \frametitle{Tasks in Python}
+  \begin{itemize}
+    \item Tasks can be written in Python when using the keyword
+      \code{python}.
+    \item The \code{d} variable is accessible, and represents the
+      BitBake datastore (where variables are stored).
+    \item Two modules are automatically imported:
+      \begin{itemize}
+        \item \code{bb}: to access BitBake's internal functions.
+        \item \code{os}: Python's operating system interfaces.
+      \end{itemize}
+    \item You can import other modules using the keyword
+      \code{import}.
+    \item Anonymous Python functions are executed during parsing.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Accessing the datastore with Python}
+  \begin{itemize}
+    \item The \code{d} variable is accessible within Python tasks.
+  \end{itemize}
+  \begin{description}
+    \item[\code{d.getVar("X", expand=False)}] Returns the value of
+      \code{X}.
+    \item[\code{d.setVar("X", "value")}] Set \code{X}.
+    \item[\code{d.appendVar("X", "value")}] Append \code{value} to
+      \code{X}.
+    \item[\code{d.prependVar("X", "value")}] Prepend \code{value} to
+      \code{X}.
+    \item[\code{d.expand(expression)}] Expend variables in
+      \code{expression}.
+  \end{description}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Python task example}
+  \begin{minted}{python}
+# Anonymous function
+python () {
+    if d.getVar("FOO", True) == "example":
+        d.setVar("BAR", "Hello, World.")
+}
+
+# Task
+python do_settime() {
+    import time
+
+    d.setVar("TIME", time.strftime('%Y%m%d', time.gmtime()))
+}
+  \end{minted}
+\end{frame}
+
+\subsection{Variable flags}
+
+\begin{frame}[fragile]
+  \frametitle{Variable flags}
+  \begin{itemize}
+    \item {\em Variable flags} are used to store extra information on
+      tasks and variables.
+    \item They are used to control task functionalities.
+    \item A number of these flags are already used by BitBake:
+      \begin{itemize}
+        \item \code{dirs}: directories that should be created before the
+          task runs. The last one becomes the work directory for the
+          task.
+        \item \code{noexec}: disable the execution of the task.
+        \item \code{nostamp}: do not create a {\em stamp} file when
+          running the task. The task will always be executed.
+        \item \code{doc}: task documentation displayed by {\em
+          listtasks}.
+      \end{itemize}
+  \end{itemize}
+  \begin{minted}{sh}
+do_settime[noexec] = "1"
+do_compile[nostamp] = "1"
+do_settime[doc] = "Set the current time in ${TIME}"
+  \end{minted}
+\end{frame}
+
+\subsection{Root filesystem creation}
+
+\begin{frame}[fragile]
+  \frametitle{Files and directories selection}
+  \begin{itemize}
+    \item The \code{FILES} variable controls the list of files and
+      directories to be placed into packages.
+    \item It must be package specific (e.g. with \code{_${PN}}).
+    \item In Poky, defaults to:
+  \end{itemize}
+  \begin{block}{}
+    \begin{minted}[fontsize=\scriptsize]{sh}
+FILES_${PN} = \
+    "${bindir}/* ${sbindir}/* ${libexecdir}/* ${libdir}/lib*${SOLIBS} \
+     ${sysconfdir} ${sharedstatedir} ${localstatedir} \
+     ${base_bindir}/* ${base_sbindir}/* \
+     ${base_libdir}/*${SOLIBS} \
+     ${base_prefix}/lib/udev/rules.d ${prefix}/lib/udev/rules.d \
+     ${datadir}/${BPN} ${libdir}/${BPN}/* \
+     ${datadir}/pixmaps ${datadir}/applications \
+     ${datadir}/idl ${datadir}/omf ${datadir}/sounds \
+     ${libdir}/bonobo/servers"
+    \end{minted}
+  \end{block}
+  \begin{itemize}
+    \item To prevent configuration files to be overwritten during the
+      Package Management System update process, use \code{CONFFILES}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Root filesystem generation}
+  \begin{itemize}
+    \item Image generation overview:
+      \begin{enumerate}
+        \item The rootfs is created using packages.
+        \item One or more images files are created, depending on the
+          \code{IMAGE_FSTYPES} value.
+      \end{enumerate}
+    \item The rootfs creation is specific to the \code{IMAGE_PKGTYPE}
+      value. It should be defined in the image recipe, otherwise the
+      first valid package type defined in \code{PACKAGE_CLASSES} is
+      used.
+    \item All the magic is done in
+      \code{meta/classes/rootfs_${IMAGE_PKGTYPE}.bbclass}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: rootfs creation with .deb packages}
+  \begin{block}{}
+    \begin{minted}{sh}
+rootfs_deb_do_rootfs () {
+    [...]
+
+    export INSTALL_ROOTFS_DEB="${IMAGE_ROOTFS}"
+
+    [...]
+
+    apt update
+    apt ${APT_ARGS} install ${package_to_install}  \
+        --force-yes --allow-unauthenticated
+
+    [...]
+}
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\subsection{Splitting packages}
+
+\begin{frame}
+  \frametitle{Benefits}
+  \begin{itemize}
+    \item Packages can be split.
+    \item Useful when a single remote repository provides multiple
+      binaries or libraries.
+    \item The list of packages to provide is defined by the
+      \code{PACKAGES} variable.
+    \item The \code{FILES} variable is often used to split the output
+      into packages.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example}
+  \begin{itemize}
+    \item The \code{kexec tools} provides \code{kexec} and \code{kdump}:
+    \begin{block}{}
+    \begin{minted}{sh}
+require kexec-tools.inc
+export LDFLAGS = "-L${STAGING_LIBDIR}"
+EXTRA_OECONF = " --with-zlib=yes"
+
+SRC_URI[md5sum] = \
+    "b9f2a3ba0ba9c78625ee7a50532500d8"
+SRC_URI[sha256sum] = "..."
+
+PACKAGES =+ "kexec kdump"
+
+FILES_kexec = "${sbindir}/kexec"
+FILES_kdump = "${sbindir}/kdump"
+    \end{minted}
+    \end{block}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Default packages}
+  \begin{itemize}
+    \item By default several packages are produced automatically:
+    \begin{block}{}
+    \begin{minted}{sh}
+PACKAGES = "${PN}-dbg ${PN}-staticdev \
+    ${PN}-dev ${PN}-doc ${PN}-locale ${PN}"
+    \end{minted}
+    \end{block}
+    \item For each of these packages a \code{FILES} variable is
+      defined in \code{meta/conf/bitbake.conf}:
+    \begin{block}{}
+    \begin{minted}[fontsize=\scriptsize]{sh}
+FILES_${PN}-dev = \
+    "${includedir} ${FILES_SOLIBSDEV} ${libdir}/*.la \            
+     ${libdir}/*.o ${libdir}/pkgconfig ${datadir}/pkgconfig \        
+     ${datadir}/aclocal ${base_libdir}/*.o \                         
+     ${libdir}/${BPN}/*.la ${base_libdir}/*.la"
+FILES_${PN}-dbg = "/usr/lib/debug /usr/src/debug"
+    \end{minted}
+    \end{block}
+  \end{itemize}
+\end{frame}

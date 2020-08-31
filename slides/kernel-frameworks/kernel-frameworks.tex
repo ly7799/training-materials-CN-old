@@ -1,0 +1,55 @@
+\section{Kernel frameworks for device drivers}
+
+\begin{frame}
+  \frametitle{Kernel and Device Drivers}
+  \begin{columns}
+    \column{0.5\textwidth} In Linux, a driver is always interfacing
+    with:
+    \begin{itemize}
+    \item a {\bf framework} that allows the driver to expose the
+      hardware features to user space applications.
+    \item a {\bf bus infrastructure}, part of the device model, to
+      detect/communicate with the hardware.
+    \end{itemize}
+    This section focuses on the {\em kernel frameworks}, while the
+    {\em device model} was covered earlier in this training.
+    \column{0.5\textwidth}
+    \includegraphics[height=0.8\textheight]{slides/kernel-frameworks/driver-architecture.pdf}
+  \end{columns}
+\end{frame}
+
+\subsection{User space vision of devices}
+
+\begin{frame}
+  \frametitle{Types of devices} Under Linux, there are essentially
+  three types of devices:
+  \begin{itemize}
+  \item {\bf Network devices}. They are represented as network
+    interfaces, visible in user space using \code{ifconfig}.
+  \item {\bf Block devices}. They are used to provide user space
+    applications access to raw storage devices (hard disks, USB
+    keys). They are visible to the applications as {\em device files}
+    in \code{/dev}.
+  \item {\bf Character devices}. They are used to provide user space
+    applications access to all other types of devices (input, sound,
+    graphics, serial, etc.). They are also visible to the applications
+    as {\em device files} in \code{/dev}.
+  \end{itemize}
+  $\rightarrow$ Most devices are {\em character devices}, so we will
+  study these in more details.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Major and minor numbers}
+  \begin{itemize}
+  \item Within the kernel, all block and character devices are
+    identified using a {\em major} and a {\em minor} number.
+  \item The {\em major number} typically indicates the family of the
+    device.
+  \item The {\em minor number} typically indicates the number of the
+    device (when there are for example several serial ports)
+  \item Most major and minor numbers are statically allocated, and
+    identical across all Linux systems.
+  \item They are defined in \kerneldochtml{admin-guide/devices}.
+  \end{itemize}
+\end{frame}

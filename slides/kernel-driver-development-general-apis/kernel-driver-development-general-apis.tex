@@ -1,0 +1,91 @@
+\section{Useful general-purpose kernel APIs}
+
+\begin{frame}
+  \frametitle{Memory/string utilities}
+  \begin{itemize}
+  \item In \kfile{include/linux/string.h}
+    \begin{itemize}
+    \item Memory-related: \kfunc{memset}, \kfunc{memcpy},
+      \kfunc{memmove}, \kfunc{memscan}, \kfunc{memcmp}, \kfunc{memchr}
+    \item String-related: \kfunc{strcpy}, \kfunc{strcat}, \kfunc{strcmp},
+      \kfunc{strchr}, \kfunc{strrchr}, \kfunc{strlen} and variants
+    \item Allocate and copy a string: \kfunc{kstrdup}, \kfunc{kstrndup}
+    \item Allocate and copy a memory area: \kfunc{kmemdup}
+    \end{itemize}
+  \item In \kfile{include/linux/kernel.h}
+    \begin{itemize}
+    \item String to int conversion: \kfunc{simple_strtoul},
+      \kfunc{simple_strtol}, \kfunc{simple_strtoull},
+      \kfunc{simple_strtoll}
+    \item Other string functions: \kfunc{sprintf}, \kfunc{sscanf}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linked lists}
+  \begin{itemize}
+  \item Convenient linked-list facility in \kfile{include/linux/list.h}
+    \begin{itemize}
+    \item Used in thousands of places in the kernel
+    \end{itemize}
+  \item Add a \kstruct{list_head} member to the structure whose
+    instances will be part of the linked list. It is usually named
+    \code{node} when each instance needs to only be part of a single
+    list.
+  \item Define the list with the \kfunc{LIST_HEAD} macro for a global
+    list, or define a \kstruct{list_head} element and initialize
+    it with \kfunc{INIT_LIST_HEAD} for lists embedded in a structure.
+  \item Then use the \code{list_*()} API to manipulate the list
+    \begin{itemize}
+    \item Add elements: \kfunc{list_add}, \kfunc{list_add_tail}
+    \item Remove, move or replace elements: \kfunc{list_del},
+      \kfunc{list_move}, \kfunc{list_move_tail},
+      \kfunc{list_replace}
+    \item Test the list: \kfunc{list_empty}
+    \item Iterate over the list: \code{list_for_each_*()} family of macros
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Linked Lists Examples (1)}
+  From \kfile{include/soc/at91/atmel_tcb.h}
+\begin{minted}{c}
+/*
+ * Definition of a list element, with a
+ * struct list_head member
+ */
+struct atmel_tc
+{
+    /* some members */
+    struct list_head node;
+};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Linked Lists Examples (2)}
+  From \kfile{drivers/misc/atmel_tclib.c}
+\begin{minted}[fontsize=\scriptsize]{c}
+/* Define the global list */
+static LIST_HEAD(tc_list);
+
+static int __init tc_probe(struct platform_device *pdev) {
+    struct atmel_tc *tc;
+    tc = kzalloc(sizeof(struct atmel_tc), GFP_KERNEL);
+    /* Add an element to the list */
+    list_add_tail(&tc->node, &tc_list);
+}
+
+struct atmel_tc *atmel_tc_alloc(unsigned block, const char *name)
+{
+    struct atmel_tc *tc;
+    /* Iterate over the list elements */
+    list_for_each_entry(tc, &tc_list, node) {
+        /* Do something with tc */
+    }
+    [...]
+}
+\end{minted}
+\end{frame}

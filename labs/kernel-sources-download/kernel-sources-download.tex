@@ -1,0 +1,111 @@
+\subchapter{Downloading kernel source code}{Get your own copy of the
+mainline Linux kernel source tree}
+
+\section{Setup}
+
+Create the \code{$HOME/linux-kernel-labs/src} directory.
+
+\section{Installing git packages}
+
+First, let's install software packages that we will need
+throughout the practical labs:
+
+\begin{verbatim}
+sudo apt install git gitk git-email
+\end{verbatim}
+
+\section{Git configuration}
+
+After installing \code{git} on a new machine, the first thing to do is
+to let \code{git} know about your name and e-mail address:
+
+\begin{verbatim}
+git config --global user.name ’My Name’
+git config --global user.email me@mydomain.net
+\end{verbatim}
+
+Such information will be stored in commits. It is important
+to configure it properly when the time comes to generate and
+send patches, in particular.
+
+\section{Cloning the mainline Linux tree}
+
+To begin working with the Linux kernel sources, we need to clone its
+reference git tree, the one managed by Linus Torvalds.
+
+However, this requires downloading more than 2.7 GB of data. If you
+are running this command from home, or if you have very fast access to
+the Internet at work (and if you are not 256 participants in the
+training room), you can do it directly by connecting to
+\url{https://git.kernel.org}:
+
+{\small
+\begin{verbatim}
+git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+\end{verbatim}
+}
+
+or if the network port for \code{git} is blocked by the corporate
+firewall, you can use the \code{https} protocol as a less efficient
+fallback:
+
+{\small
+\begin{verbatim}
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+\end{verbatim}
+}
+
+If Internet access is not fast enough and if multiple people have to
+share it, your instructor will give you a USB flash drive with a
+\code{tar.gz} archive of a recently cloned Linux source tree.
+
+You will just have to extract this archive in the current directory,
+and then pull the most recent changes over the network:
+
+\begin{verbatim}
+tar xf linux-git.tar.gz
+cd linux
+git checkout master
+git pull
+\end{verbatim}
+
+Of course, if you directly ran
+\code{git clone}, you won't have to run \code{git pull}, as
+\code{git clone} already retrieved the latest changes. You may need to
+run \code{git pull} in the future though, if you want to update a
+newer Linux version.
+
+\section{Accessing stable releases}
+
+Having the Linux kernel development sources is great, but when you are
+creating products, you prefer to avoid working with a target that moves
+every day.
+
+That's why we need to use the {\em stable} releases of the Linux
+kernel.
+
+Fortunately, with \code{git}, you won't have to clone an entire source
+tree again. All you need to do is add a reference to a {\em remote}
+tree, and fetch only the commits which are specific to that remote tree.
+
+{\footnotesize
+\begin{verbatim}
+cd ~/linux-kernel-labs/src/linux/
+git remote add stable git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+git fetch stable
+\end{verbatim}
+}
+
+As this still represents many git objects to download (339 MiB when 5.5 was
+the latest version), if you are using an already downloaded git tree,
+your instructor will probably have fetched the {\em stable} branch ahead
+of time for you too. You can check by running:
+
+\begin{verbatim}
+git branch -a
+\end{verbatim} 
+
+We will choose a particular stable version in the next labs.
+
+Now, let's continue the lectures. This will leave time for the commands
+that you typed to complete their execution (if needed).

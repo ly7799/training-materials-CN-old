@@ -1,0 +1,117 @@
+\section{What's new in Buildroot?}
+
+\begin{frame}{What's new in Buildroot}
+  \begin{itemize}
+  \item The major improvements in each release are summarized in the
+    file named \code{CHANGES} in the Buildroot source tree
+  \item Always mentions changes that could cause backward
+    compatibility problems
+  \item The following slides summarize the major new features added in
+    each release between 2018.02 and 2020.02.
+  \item All new Buildroot versions come with new packages, and many
+    updates to the existing packages
+    \begin{itemize}
+    \item Such package additions and updates are not listed in the
+      following slides.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2018.02}
+  \begin{itemize}
+  \item First {\bf LTS} release
+  \item {\bf Toolchain}: binutils 2.30 added, binutils 2.29 is the default
+  \item Support for hardening options: {\em relro} and {\em fortify}
+  \item {\bf Infrastructure}: \code{make source-check} removed, check
+    added for same file installed by different packages
+  \item Support for the Meson build system, for the Rust programming
+    language
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2018.05}
+  \begin{itemize}
+  \item {\bf Toolchain}: glibc 2.27, musl 1.1.19, uClibc-ng 1.0.30
+  \item {\bf Architecture}: Blackfin support removed
+  \item {\bf Infrastructure}: Git download caching support, parallel
+    creation of root filesystem images, \code{golang-package}
+    infrastructure, proper extract dependencies
+  \item New \code{<pkg>-show-recursive-depends} and
+    \code{<pkg>-show-recursive-rdepends} targets
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2018.08}
+  \begin{itemize}
+  \item {\bf Toolchain}: gcc 8.x support, gcc 7.x is the default, gdb
+    8.1 added, binutils 2.31 added
+  \item {\bf Architecture}: support for ARM Cortex-M7
+  \item {\bf Packages}: many significant package updates (systemd,
+    Qt5, rust, X.org, Gstreamer, etc.)
+  \item {\bf Infrastructure}: \code{meson-package} infrastructure
+    added
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2018.11}
+  \begin{itemize}
+  \item {\bf Architecture}: support for RISC-V 64-bit added
+  \item {\bf Toolchain}: glibc 2.28
+  \item {\bf Filesystems}: btrfs and f2fs support
+  \item OpenCL virtual package added
+  \item Tons of new Perl and Python packages
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2019.02}
+  \begin{itemize}
+  \item {\bf LTS} release
+  \item {\bf Architecture}: support for RISC-V 32-bit added, several
+    new ARM and MIPS variants
+  \item {\bf Toolchain}: musl 1.1.21, gdb 8.2.1
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2019.05}
+  \begin{itemize}
+  \item {\bf Architecture}: Andes NDS-32 support added
+  \item {\bf Toolchain}: glibc 2.29, musl 1.1.22, binutils 2.32
+  \item {\bf Infrastructure}: \code{show-info} make target
+  \item Support for {\em gettext-tiny} as a lightweight alternative to
+    {\em GNU Gettext}
+  \item Support for the {\bf OP-TEE} trusted execution environment
+  \item Notable {\bf new packages}: Intel media libraries, libcamera,
+    wpewebkit
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2019.08}
+  \begin{itemize}
+  \item {\bf Toolchain}: ARM, ARC external toolchains updated, gcc
+    9.1, gdb 8.3, musl 1.1.23.
+  \item {\bf Infrastructure}: \code{BR2_EXTERNAL} directories can now
+    contribute their own implementation of some virtual packages such
+    as external toolchains, libjpeg, openssl.
+  \item Support for {\bf OpenRC} init system
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2019.11}
+  \begin{itemize}
+  \item Buildroot now needs gcc >= 4.8 on the system
+  \item {\bf Toolchain}: add support for D language, gcc 9.2.0, glibc
+    2.30, musl 1.1.24, uClibc-ng 1.0.32
+  \item {\bf Infrastructure}: \code{BR2_EXTERNAL} directories can now
+    contribute Linux kernel extensions.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2020.02}
+  \begin{itemize}
+  \item {\bf LTS} release
+  \item Experimental support for {\bf top-level parallel} build
+  \item {\bf Toolchain}: binutils 2.33.1, gcc 7.5.0, external
+    toolchains updated
+  \item Improvements for {\bf reproducible} builds
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,106 @@
+
+\usepackage[T1]{fontenc}
+\usepackage[normalem]{ulem}
+\usepackage[vmargin=2cm, hmargin=1.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage[all]{hypcap}
+\usepackage{fancyhdr}      % Used for customization of header/footer
+\pagestyle{fancy}
+\usepackage{graphicx}
+\usepackage{titlesec}      % Used for \titleformat
+\usepackage[htt]{hyphenat} % I want hyphenation in {\tt ...} blocks
+\usepackage{xcolor}
+\usepackage{titling}
+\usepackage{eurosym}
+\usepackage{ifthen}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{overpic}
+
+% A nicer font
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\setmainfont{Liberation Serif}
+\setsansfont{Liberation Sans}
+\setmonofont{Liberation Mono}
+
+%% Remove indentation on the first line of each paragraph, and add
+%% some space between each paragraph.
+\usepackage{parskip}
+
+\hypersetup{colorlinks=true,linkcolor=gray,urlcolor=gray}
+
+\fancyhead{}
+\fancyfoot{}
+
+\fancyhead[CO, CE]{
+  \begin{overpic}[permil,width=\textwidth]{common/background.jpg}
+    \put(10,25){\includegraphics[width=0.1\textwidth]{common/logo-penguins.pdf}}
+    \put(770,50){\includegraphics[width=0.2\textwidth]{common/bootlin-logo.pdf}}
+  \end{overpic}
+}
+\fancyfoot[RO, LE] {\thepage}
+
+\definecolor{fedarkblue}{RGB}{204,204,255}
+\definecolor{felightblue}{RGB}{230,230,255}
+
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+\setlength{\headheight}{60pt}
+
+\definecolor{textcolor}{HTML}{4B6FA9}
+
+% Header style
+\titleformat{\section}{\color{textcolor}\normalfont\Large\sffamily\bfseries}{}{1em}{}[\vspace{2pt}\titlerule]
+\titleformat{\subsection}[display]{\normalfont\large\sffamily}{}{0pt}{}[\vspace{2pt}\titlerule]
+\titleformat{\subsubsection}[display]{\normalfont\sffamily}{}{0pt}{}
+
+% No section numbering
+\setcounter{secnumdepth}{0}
+
+% Customization of title and author style
+\pretitle{\begin{center}\Huge\sffamily}
+\preauthor{\begin{center}
+\large \sffamily \lineskip 0.2em%
+\begin{tabular}[t]{c}}
+\postauthor{\end{tabular}\par\end{center}}
+\predate{\begin{center}\large\sffamily}
+
+% Useful definitions
+
+\newcommand{\code}[1]
+{\path{#1}}
+
+\newcommand{\cellstart}{\rule{0pt}{\heightof{A}+1ex}}
+\newcommand{\cellfinish}{\rule[-1ex]{0pt}{1ex}}
+
+\renewcommand{\tabularxcolumn}[1]{>{\cellstart}m{#1}<{\cellfinish}}
+
+%% Define a one column array. Two arguments are needed:
+%%  first argument: the title of the section
+%%  second argument: the contents of the section
+\newcommand\feagendaonecolumn[2]{
+\begin{tabularx}{\textwidth}{X}
+  \rowcolor{fedarkblue}
+  {\bf #1} \\
+  \rowcolor{felightblue}
+  #2 \\
+\end{tabularx}
+\vspace{0.5cm}
+}
+
+%% Define a two column array. Four arguments are needed:
+%%  first argument: The title of the section in the left column
+%%  second argument: The contents of the section in the left column
+%%  third argument: The title of the section in the right column
+%%  fourth argument: The contents of the section in the right column
+\newcommand\feagendatwocolumn[4]{
+\begin{tabularx}{\textwidth}{X X}
+  \rowcolor{fedarkblue}
+  {\bf #1} & {\bf #3} \\
+  \rowcolor{felightblue}
+  #2 & #4 \\
+\end{tabularx}
+\vspace{0.5cm}
+}

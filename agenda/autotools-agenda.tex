@@ -1,0 +1,195 @@
+\documentclass[a4paper,12pt,obeyspaces,spaces,hyphens]{article}
+
+\usepackage{agenda}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{calc}
+
+\hypersetup{pdftitle={Autotools training},
+  pdfauthor={Bootlin}}
+
+\renewcommand{\arraystretch}{2.0}
+
+\begin{document}
+
+\thispagestyle{fancy}
+
+\setlength{\arrayrulewidth}{0.8pt}
+
+\begin{center}
+\LARGE
+{\em Autotools} training\\
+\large
+1-day session
+\end{center}
+\vspace{1cm}
+
+\small
+\newcolumntype{g}{>{\columncolor{fedarkblue}}m{4cm}}
+\newcolumntype{h}{>{\columncolor{felightblue}}X}
+
+\arrayrulecolor{lightgray} {
+  \setlist[1]{itemsep=-5pt}
+  \begin{tabularx}{\textwidth}{|g|h|}
+    {\bf Title} & {\bf Autotools training} \\
+    \hline
+
+    {\bf Overview} &
+    Understand the role of the {\em autotools} \par
+    Usage of the {\em autotools} \par
+    Basics of {\em autoconf} and {\em automake} \par
+    Advanced {\em autoconf} topics: configuration header, checking for
+    functions, headers and libraries, writing custom tests, handling
+    external software and optional features, pkg-config, etc. \par
+    Advanced {\em automake} topics: subdirectories, conditionals,
+    shared libraries with {\em libtool}, etc. \par
+    References to books and tutorials about {\em autotools}\\
+    \hline
+
+    {\bf Duration} & {\bf One} day - 8 hours
+    \newline 40\% of lectures, 60\% of practical labs. \\
+    \hline
+
+    {\bf Trainer} & {\bf Thomas Petazzoni}. Thomas is a major
+    Buildroot developer since 2009, an activity through which he has
+    gained a good knowledge of {\em autoconf}, {\em automake} and {\em
+      libtool}.\\
+    \hline
+
+    {\bf Language} & Oral lectures: English, French.
+    \newline Materials: English.\\
+    \hline
+
+    {\bf Audience} & Companies already using or interested in using
+    {\em autotools} to build their software components.\\
+    \hline
+
+    {\bf Prerequisites} & {\bf Knowledge of embedded Linux} as covered
+    in our embedded Linux course:
+    \newline \url{https://bootlin.com/training/embedded-linux/} \vspace{1em}
+    \newline {\bf Knowledge and practice of UNIX or GNU/Linux commands}
+    \newline People lacking experience on this topic should get
+    trained by themselves, for example with our freely available on-line slides:
+    \newline \url{https://bootlin.com/blog/command-line/} \\
+    \hline
+  \end{tabularx}
+
+  \begin{tabularx}{\textwidth}{|g|h|}
+    {\bf Required equipment} &
+    {\bf For on-site sessions only.}
+    \newline Everything is supplied by Bootlin in public
+    sessions.
+    \begin{itemize}
+    \item Video projector
+    \item PC computers with at least 8 GB of RAM, and Ubuntu Linux
+    installed in a {\bf free partition of at least 20 GB. Using Linux
+      in a virtual machine is not supported}, because of issues
+    connecting to real hardware.
+    \item We need Ubuntu Desktop 16.04 (Xubuntu and other variants
+    are fine). We don't support other distributions, because we can't
+    test all possible package versions.
+    \item {\bf Connection to the Internet} (direct or through the
+    company proxy).
+    \item {\bf PC computers with valuable data must be backed up}
+    before being used in our sessions.  Some people have already made
+    mistakes during our sessions and damaged work data.
+    \end{itemize}\\
+    \hline
+
+    {\bf Materials} & Electronic copies of presentations and
+    labs.
+    \newline Electronic copy of lab files.\\
+    \hline
+
+\end{tabularx}}
+
+\newpage
+
+\normalsize
+
+\section{Day 1 - Morning}
+
+\feagendatwocolumn
+{Lecture - Overview and usage of {\em autotools}}
+{
+  \begin{itemize}
+  \item What the {\em autotools} are, what the alternatives are, and
+    what they are useful for.
+  \item Usage of an existing software component using the {\em
+      autotools}: configuring and building the software component.
+  \item Standard Makefile targets, filesystem hierarchy, configuration variables
+  \item System types: build, host, target
+  \item Cross-compilation
+  \item Out of tree build
+  \item Diverted installation
+  \item Cache variables
+  \item Using {\em autoreconf}
+  \end{itemize}
+}
+{Lab - Usage of an existing software component using the {\em autotools}}
+{
+  \begin{itemize}
+  \item First build of an {\em autotools} package
+  \item Out-of-tree build and cross-compilation
+  \item Overriding cache variables
+  \item Using {\em autoreconf}
+  \end{itemize}
+}
+
+\feagendaonecolumn
+{Lecture - autoconf/automake: the basics}
+{
+  \begin{itemize}
+  \item \code{configure.ac} language and basic macros
+  \item \code{AC_CONFIG_FILES} and {\em output variables}
+  \item Minimal \code{Makefile.am}
+  \end{itemize}
+}
+
+\section{Day 1 - Afternoon}
+
+\feagendaonecolumn
+{Lab - autoconf/automake: the basics}
+{
+  \begin{itemize}
+  \item Your first \code{configure.ac}
+  \item Adding and building a program
+  \item Going further: \code{autoscan} and \code{make dist}
+  \end{itemize}
+}
+
+\feagendatwocolumn
+{Lecture - Autoconf advanced}
+{
+  \begin{itemize}
+  \item Configuration header
+  \item Checking for functions, headers, libraries
+  \item Custom tests
+  \item Handling external software and optional features
+  \item \code{pkg-config}
+  \end{itemize}
+}
+{Lecture - Automake advanced}
+{
+  \begin{itemize}
+  \item Subdirectories
+  \item Conditionals
+  \item Shared libraries
+  \item Misc: variables, macro and auxiliarly directories, silent
+    rules, etc.
+  \end{itemize}
+}
+
+\feagendaonecolumn
+{Lab - Implement more advanced options}
+{
+  \begin{itemize}
+  \item Use \code{AC_ARG_ENABLE} and \code{config.h}
+  \item Implement a shared library
+  \item Switch to multiple directories
+  \item Make the compilation of programs conditional
+  \item Use \code{pkg-config}
+  \end{itemize}
+}
+
+\end{document}

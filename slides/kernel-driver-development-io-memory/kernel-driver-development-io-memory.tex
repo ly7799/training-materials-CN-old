@@ -1,0 +1,271 @@
+\section{I/O Memory and Ports}
+
+\begin{frame}
+  \frametitle{Port I/O vs. Memory-Mapped I/O}
+  \begin{itemize}
+  \item MMIO
+    \begin{itemize}
+    \item Same address bus to address memory and I/O devices
+    \item Access to the I/O devices using regular instructions
+    \item Most widely used I/O method across the different
+      architectures supported by Linux
+    \end{itemize}
+  \item PIO
+    \begin{itemize}
+    \item Different address spaces for memory and I/O devices
+    \item Uses a special class of CPU instructions to access I/O
+      devices
+    \item Example on x86: IN and OUT instructions
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MMIO vs PIO}
+  \begin{center}
+    \includegraphics[width=\textwidth]{slides/kernel-driver-development-io-memory/mmio-vs-pio.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Requesting I/O ports}
+  \begin{itemize}
+  \item Tells the kernel which driver is using which I/O ports
+  \item Allows to prevent other drivers from using the same I/O ports,
+    but is purely voluntary.
+  \item
+\begin{minted}{c}
+struct resource *request_region(
+     unsigned long start,
+     unsigned long len,
+     char *name);
+\end{minted}
+  \item Tries to reserve the given region and returns \code{NULL} if unsuccessful.
+  \item \mint{c}+request_region(0x0170, 8, "ide1");+
+  \item
+\begin{minted}{c}
+void release_region(
+    unsigned long start,
+    unsigned long len);
+\end{minted}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{/proc/ioports example (x86)}
+{\small
+\begin{verbatim}
+0000-001f : dma1
+0020-0021 : pic1
+0040-0043 : timer0
+0050-0053 : timer1
+0070-0077 : rtc
+0080-008f : dma page reg
+00a0-00a1 : pic2
+00c0-00df : dma2
+00f0-00ff : fpu
+0170-0177 : ide1
+01f0-01f7 : ide0
+0376-0376 : ide1
+03f6-03f6 : ide0
+03f8-03ff : serial
+0800-087f : 0000:00:1f.0
+...
+\end{verbatim}
+}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Accessing I/O ports}
+  \begin{itemize}
+  \item Functions to read/write bytes (\code{b}), word (\code{w}) and longs (\code{l}) to I/O ports:
+    \begin{itemize}
+    \item \mint{c}+unsigned in[bwl](unsigned long port)+
+    \item \mint{c}+void out[bwl](value, unsigned long port)+
+    \end{itemize}
+  \item And the strings variants: often more efficient than the
+    corresponding C loop, if the processor supports such operations!
+    \begin{itemize}
+    \item \mint{c}+void ins[bwl](unsigned port, void *addr,+
+      \mint{c}+unsigned long count)+
+    \item \mint{c}+void outs[bwl](unsigned port, void *addr,+
+      \mint{c}+unsigned long count)+
+    \end{itemize}
+  \item Examples
+    \begin{itemize}
+    \item read 8 bits
+      \begin{itemize}
+      \item \mint{c}|oldlcr = inb(baseio + UART_LCR)|
+      \end{itemize}
+    \item write 8 bits
+      \begin{itemize}
+      \item \mint{c}|outb(MOXA_MUST_ENTER_ENCHANCE, baseio + UART_LCR)|
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Requesting I/O memory}
+  \begin{itemize}
+  \item Functions equivalent to \kfunc{request_region} and
+    \kfunc{release_region}, but for I/O memory.
+  \item
+\begin{minted}{c}
+struct resource *request_mem_region(
+    unsigned long start,
+    unsigned long len,
+    char *name);
+\end{minted}
+  \item
+\begin{minted}{c}
+void release_mem_region(
+    unsigned long start,
+    unsigned long len);
+  \end{minted}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{/proc/iomem example - ARM (Raspberry Pi, Linux 4.19)}
+{\footnotesize
+\begin{verbatim}
+00000000-3b3fffff : System RAM
+  00008000-00bfffff : Kernel code
+  00d00000-00e6ad0f : Kernel data
+3f006000-3f006fff : dwc_otg
+3f007000-3f007eff : dma@7e007000
+3f00a000-3f00a023 : watchdog@7e100000
+3f00b840-3f00b87b : mailbox@7e00b840
+3f00b880-3f00b8bf : mailbox@7e00b880
+3f100000-3f100113 : watchdog@7e100000
+3f101000-3f102fff : cprman@7e101000
+3f104000-3f10400f : rng@7e104000
+3f200000-3f2000b3 : gpio@7e200000
+3f201000-3f2011ff : serial@7e201000
+  3f201000-3f2011ff : serial@7e201000
+3f202000-3f2020ff : mmc@7e202000
+3f212000-3f212007 : thermal@7e212000
+3f215000-3f215007 : aux@7e215000
+3f980000-3f98ffff : dwc_otg
+\end{verbatim}
+}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mapping I/O memory in virtual memory}
+  \begin{itemize}
+  \item Load/store instructions work with virtual addresses
+  \item To access I/O memory, drivers need to have a virtual address
+    that the processor can handle, because I/O memory is not mapped by
+    default in virtual memory.
+  \item The \code{ioremap} function satisfies this need:
+\begin{minted}{c}
+#include <asm/io.h>
+
+void __iomem *ioremap(phys_addr_t phys_addr,
+    unsigned long size);
+void iounmap(void __iomem *addr);
+\end{minted}
+  \item Caution: check that \kfunc{ioremap} doesn't return a \code{NULL} address!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{ioremap()}
+  \begin{center}
+    \includegraphics[height=0.75\textheight]{slides/kernel-driver-development-io-memory/ioremap.pdf}\\
+    \code{ioremap(0xAFFEBC00, 4096) = 0xCDEFA000}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Managed API}
+  Using \kfunc{request_mem_region} and \kfunc{ioremap} in device
+  drivers is now deprecated. You should use the below "managed"
+  functions instead, which simplify driver coding and error handling:
+  \begin{itemize}
+  \item \kfunc{devm_ioremap}
+  \item \kfunc{devm_iounmap}
+  \item \kfunc{devm_ioremap_resource}
+        \begin{itemize}
+	\item Takes care of both the request and remapping operations!
+	\item Example (\kfile{drivers/crypto/atmel-sha.c}):
+	\begin{block}{}
+	\begin{minted}{c}
+sha_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+...
+sha_dd->io_base = devm_ioremap_resource(&pdev->dev, sha_res);
+	\end{minted}
+	\end{block}{}
+	\end{itemize}
+  \item \kfunc{devm_platform_ioremap_resource}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Accessing MMIO devices}
+  \begin{itemize}
+  \item Directly reading from or writing to addresses returned by
+    \kfunc{ioremap} (\emph{pointer dereferencing}) may not work on some
+    architectures.
+  \item To do PCI-style, little-endian accesses, conversion being done
+    automatically
+\begin{minted}{c}
+unsigned read[bwl](void *addr);
+void write[bwl](unsigned val, void *addr);
+\end{minted}
+  \item To do raw access, without endianness conversion
+\begin{minted}{c}
+unsigned __raw_read[bwl](void *addr);
+void __raw_write[bwl](unsigned val, void *addr);
+\end{minted}
+  \item Example
+    \begin{itemize}
+    \item 32 bits write
+\begin{minted}{c}
+__raw_writel(1 << KS8695_IRQ_UART_TX,
+    membase + KS8695_INTST);
+\end{minted}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Avoiding I/O access issues}
+  \begin{itemize}
+  \item Caching on I/O ports or memory already disabled
+  \item Use the \kfunc{writel}/\kfunc{readl} macros,
+        they do the right thing for your architecture
+  \item The compiler and/or CPU can reorder memory accesses, which
+    might cause troubles for your devices is they expect one register
+    to be read/written before another one.
+    \begin{itemize}
+    \item Memory barriers are available to prevent this reordering
+    \item \kfunc{rmb} is a read memory barrier, prevents reads to
+      cross the barrier
+    \item \kfunc{wmb} is a write memory barrier
+    \item \kfunc{mb} is a read-write memory barrier
+    \end{itemize}
+  \item Starts to be a problem with CPUs that reorder instructions and
+    SMP.
+  \item See \kerneldoctext{memory-barriers.txt} for details
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{/dev/mem}
+  \begin{itemize}
+  \item Used to provide user space applications with direct access to
+    physical addresses.
+  \item Usage: open \code{/dev/mem} and read or write at given offset.
+    What you read or write is the value at the corresponding physical
+    address.
+  \item Used by applications such as the X server to write directly to
+    device memory.
+  \item On \code{x86}, \code{arm}, \code{arm64},
+    \code{powerpc}, \code{s390} and \code{unicore32}:
+    \kconfig{CONFIG_STRICT_DEVMEM} option to restrict \code{/dev/mem}
+    to non-RAM addresses, for security reasons (Linux 4.20 status).
+\end{itemize}
+\end{frame}

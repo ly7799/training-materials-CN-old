@@ -1,0 +1,243 @@
+\subsection{Linux Code and Device Drivers}
+
+\begin{frame}
+  \frametitle{Programming language}
+  \begin{itemize}
+  \item Implemented in C like all UNIX systems. (C was created to
+    implement the first UNIX systems)
+  \item A little Assembly is used too:
+    \begin{itemize}
+    \item CPU and machine initialization, exceptions
+    \item Critical library routines.
+    \end{itemize}
+  \item No C++ used, see \url{http://vger.kernel.org/lkml/\#s15-3}
+  \item All the code compiled with gcc
+    \begin{itemize}
+    \item Many gcc specific extensions used in the kernel code, any
+      ANSI C compiler will not compile the kernel
+    \item See
+      \url{https://gcc.gnu.org/onlinedocs/gcc-6.2.0/gcc/C-Extensions.html}
+    \end{itemize}
+    \item Ongoing work to compile the kernel with the LLVM C compiler too.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{No C library}
+  \begin{itemize}
+  \item The kernel has to be standalone and can't use user space code.
+  \item Architectural reason: user space is implemented on top of kernel services, not the
+    opposite.
+  \item Technical reason: the kernel is on its own during the boot up
+    phase, before it has accessed a root filesystem.
+  \item Hence, kernel code has to supply its own library implementations
+    (string utilities, cryptography, uncompression...)
+  \item So, you can't use standard C library functions in kernel code.
+    (\code{printf()}, \code{memset()}, \code{malloc()},...).
+  \item Fortunately, the kernel provides similar C functions for your
+    convenience, like \kfunc{printk}, \kfunc{memset},
+    \kfunc{kmalloc}, ...
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Portability}
+  \begin{itemize}
+  \item The Linux kernel code is designed to be portable
+  \item All code outside \kdir{arch} should be portable
+  \item To this aim, the kernel provides macros and functions to
+    abstract the architecture specific details
+    \begin{itemize}
+    \item Endianness
+      \begin{itemize}
+      \item \kfunc{cpu_to_be32}
+      \item \kfunc{cpu_to_le32}
+      \item \kfunc{be32_to_cpu}
+      \item \kfunc{le32_to_cpu}
+      \end{itemize}
+    \item I/O memory access
+    \item Memory barriers to provide ordering guarantees if needed
+    \item DMA API to flush and invalidate caches if needed
+    \end{itemize}
+  \item Never use floating point numbers in kernel code. Your code may
+    need to run on a low-end processor without a floating point unit.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{No stable Linux internal API}
+  \begin{columns}
+    \column{0.7\textwidth}
+    \begin{itemize}
+    \item The internal kernel API to implement kernel code can undergo
+      changes between two releases.
+    \item In-tree drivers are updated by the developer proposing the API
+      change: works great for mainline code.
+    \item An out-of-tree driver compiled for a given version may no
+      longer compile or work on a more recent one.
+    \item See \kerneldochtml{process/stable-api-nonsense} in kernel sources for
+      reasons why.
+    \item Of course, the kernel to user space API does not change (system
+      calls, \code{/proc}, \code{/sys}), as it would break existing
+      programs.
+    \end{itemize}
+    \column{0.3\textwidth}
+    \includegraphics[width=\textwidth]{slides/kernel-source-code-drivers/no-stable-kernel-abi.pdf}
+    \tiny
+    Image credits (Wikipedia):\\
+    \url{https://bit.ly/2U2rdGB}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kernel memory constraints}
+  \begin{itemize}
+  \item No memory protection
+  \item The kernel doesn't try to recover from attemps to access illegal
+    memory locations. It just dumps {\em oops} messages on the system console.
+  \item Fixed size stack (8 or 4 KB). Unlike in user space, no mechanism
+    was implemented to make it grow.
+  \item Swapping is not implemented for kernel memory either.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Linux kernel licensing constraints}
+  \begin{itemize}
+  \item The Linux kernel is licensed under the GNU General Public
+    License version 2
+    \begin{itemize}
+    \item This license gives you the right to use, study, modify and
+      share the software freely
+    \end{itemize}
+  \item However, when the software is redistributed, either modified
+    or unmodified, the GPL requires that you redistribute the software
+    under the same license, with the source code
+    \begin{itemize}
+    \item If modifications are made to the Linux kernel (for example
+      to adapt it to your hardware), it is a derivative work of the
+      kernel, and therefore must be released under GPLv2
+    \item The validity of the GPL on this point has already been
+      verified in courts
+    \end{itemize}
+  \item However, you're only required to do so
+    \begin{itemize}
+    \item At the time the device starts to be distributed
+    \item To your customers, not to the entire world
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Proprietary code and the kernel}
+  \begin{itemize}
+  \item It is illegal to distribute a binary kernel that includes
+    statically compiled proprietary drivers
+  \item The kernel modules are a gray area: are they derived works of
+    the kernel or not?
+    \begin{itemize}
+    \item The general opinion of the kernel community is that
+      proprietary modules are bad: \kerneldochtml{process/kernel-driver-statement}
+    \item From a legal point of view, each driver is probably a
+      different case
+    \item Is it really useful to keep your drivers secret?
+    \end{itemize}
+  \item There are some examples of proprietary drivers, like the
+    Nvidia graphics drivers
+    \begin{itemize}
+    \item They use a wrapper between the driver and the kernel
+    \item Unclear whether it makes it legal or not
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Advantages of GPL drivers}
+  \begin{itemize}
+  \item You don't have to write your driver from scratch. You can
+    reuse code from similar free software drivers.
+  \item You could get free community contributions, support, code
+    review and testing, though this generally only happens with code
+    submitted for the mainline kernel.
+  \item Your drivers can be freely and easily shipped by others (for
+    example by Linux distributions or embedded Linux build systems).
+  \item Pre-compiled drivers work with only one kernel version and one
+    specific configuration, making life difficult for users who want
+    to change the kernel version.
+  \item Legal certainty, you are sure that a GPL driver is fine from a
+    legal point of view.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Advantages of in-tree kernel drivers}
+  Once your sources are accepted in the mainline tree...
+  \begin{itemize}
+  \item There are many more people reviewing your code, allowing to
+    get cost-free security fixes and improvements.
+  \item You can also get changes from people modifying internal
+    kernel APIs.
+  \item Accessing your code is easier for users.
+  \item You can get contributions from your own customers.
+  \end{itemize}
+  This will for sure reduce your maintenance and support work
+\end{frame}
+
+\begin{frame}
+  \frametitle{User space device drivers 1/3}
+  \begin{itemize}
+  \item In some cases, it is possible to implement device drivers in
+    user space!
+  \item Can be used when
+    \begin{itemize}
+    \item The kernel provides a mechanism that allows user space
+      applications to directly access the hardware.
+    \item There is no need to leverage an existing kernel subsystem
+      such as the networking stack or filesystems.
+    \item There is no need for the kernel to act as a ``multiplexer''
+      for the device: only one application accesses the device.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{User space device drivers 2/3}
+  \begin{itemize}
+  \item Possibilities for user space device drivers:
+    \begin{itemize}
+    \item USB with {\em libusb}, \url{https://libusb.info/}
+    \item SPI with {\em spidev}, \kerneldoctext{spi/spidev}
+    \item I2C with {\em i2cdev}, \kerneldoctext{i2c/dev-interface}
+    \item Memory-mapped devices with {\em UIO}, including interrupt
+      handling, \kerneldochtml{driver-api/uio-howto}
+    \end{itemize}
+  \item Certain classes of devices (printers, scanners, 2D/3D graphics
+    acceleration) are typically handled partly in kernel space, partly
+    in user space.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{User space device drivers 3/3}
+  \begin{itemize}
+  \item Advantages
+    \begin{itemize}
+    \item No need for kernel coding skills. Easier to reuse code
+      between devices.
+    \item Drivers can be written in any language, even Perl!
+    \item Drivers can be kept proprietary.
+    \item Driver code can be killed and debugged. Cannot crash the
+      kernel.
+    \item Can be swapped out (kernel code cannot be).
+    \item Can use floating-point computation.
+    \item Less in-kernel complexity.
+    \item Potentially higher performance, especially for
+      memory-mapped devices, thanks to the avoidance of system calls.
+    \end{itemize}
+  \item Drawbacks
+    \begin{itemize}
+    \item Less straightforward to handle interrupts.
+    \item Increased interrupt latency vs. kernel code.
+    \end{itemize}
+  \end{itemize}
+\end{frame}

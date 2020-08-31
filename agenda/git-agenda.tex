@@ -1,0 +1,179 @@
+\documentclass[a4paper,12pt,obeyspaces,spaces,hyphens]{article}
+
+\usepackage{agenda}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{calc}
+
+\hypersetup{pdftitle={Git training},
+  pdfauthor={Bootlin}}
+
+\renewcommand{\arraystretch}{2.0}
+
+\begin{document}
+
+\thispagestyle{fancy}
+
+\setlength{\arrayrulewidth}{0.8pt}
+
+\begin{center}
+\LARGE
+Source control using Git training\\
+\large
+1-day session
+\end{center}
+\vspace{1cm}
+
+\small
+\newcolumntype{g}{>{\columncolor{fedarkblue}}m{4cm}}
+\newcolumntype{h}{>{\columncolor{felightblue}}X}
+
+\arrayrulecolor{lightgray} {
+  \setlist[1]{itemsep=-5pt}
+  \begin{tabularx}{\textwidth}{|g|h|}
+    {\bf Title} & {\bf Source control using Git training} \\
+    \hline
+
+    {\bf Overview} &
+    Introduction to source control and Git \par
+    Git glossary\par
+    Git basics\par
+    Branches\par
+    Remotes\par
+    Collaborating\par
+    Workflows\par
+    \\
+    \hline
+
+    {\bf Duration} & {\bf One} day - 8 hours.
+    \newline 40\% of lectures, 60\% of practical labs. \\
+    \hline
+
+    {\bf Language} & Oral lectures: English, French.
+    \newline Materials: English.\\
+    \hline
+
+    {\bf Audience} & Companies already using or interested in using
+    Git to managed their source code.\\
+    \hline
+
+    {\bf Prerequisites} & {\bf None}\\
+    \hline
+  \end{tabularx}
+
+  \begin{tabularx}{\textwidth}{|g|h|}
+    {\bf Required equipment} &
+    {\bf For on-site sessions only.}
+    \newline Everything is supplied by Bootlin in public
+    sessions.
+    \begin{itemize}
+    \item Video projector
+    \item PC computers with at least 8 GB of RAM, and Ubuntu Linux
+    installed in a {\bf free partition of at least 20 GB}.
+    \item We need Ubuntu Desktop 16.04 (Xubuntu and
+    other variants are fine). We don't support other
+    distributions, because we can't test all possible package versions.
+    \item {\bf Connection to the Internet} (direct or through the
+    company proxy).
+    \item {\bf PC computers with valuable data must be backed up}
+    before being used in our sessions.  Some people have already made
+    mistakes during our sessions and damaged work data.
+    \end{itemize}\\
+    \hline
+
+    {\bf Materials} & Electronic copies of presentations and
+    labs.
+    \newline Electronic copy of lab files.\\
+    \hline
+
+\end{tabularx}}
+\normalsize
+
+\section{Morning}
+
+\feagendatwocolumn
+{Lecture - Source control}
+{
+  \begin{itemize}
+  \item Version control systems: principles
+  \item Centralized vs. distributed version control systems
+  \item Git glossary and internal representation of data
+  \item Git basics: installation and configuration, getting a repository, making commits, etc.
+  \item Basic Git workflow: understanding {\em HEAD}, {\em index} and {\em working directory}
+  \end{itemize}
+}
+{Lab - Basic Git usage}
+{
+  \begin{itemize}
+  \item Installing and setting up Git
+  \item Getting a repository
+  \item Listing changes
+  \item First commits
+  \item Undoing changes
+  \end{itemize}
+}
+\\
+\feagendatwocolumn
+{Lecture - Organizing sources}
+{
+  \begin{itemize}
+  \item Navigating in sources and history
+  \item Branches: creation, deletion, merging
+  \item Rewriting history with {\em rebase}
+  \item Tags
+  \item Temporary storage of changes with {\em stash}
+  \end{itemize}
+}
+{Lab - Everyday Git usage}
+{
+  \begin{itemize}
+  \item Initializing a Git repository
+  \item Creating and moving between branches
+  \item Merging
+  \item Rebasing
+  \item Cleaning up a branch
+  \item Tagging commits
+  \end{itemize}
+}
+
+\section{Afternoon}
+
+\feagendatwocolumn
+{Lecture - Collaborating}
+{
+  \begin{itemize}
+  \item Git {\em remotes}: interacting with other developers
+  \item Importing changes: fetching changes from other developers, applying patches
+  \item Sending changes: pushing commits and sending patches
+  \item Getting more efficient
+  \end{itemize}
+}
+{Lab - Collaborating}
+{
+  \begin{itemize}
+  \item Working with multiple remotes
+  \item Creating patches
+  \item Applying patches
+  \item Exporting a repository
+  \item First Pull request
+  \end{itemize}
+}
+\\
+\feagendatwocolumn
+{Lecture - Workflows}
+{
+  \begin{itemize}
+  \item Centralized workflow, often used in internal company projects
+  \item Linux Kernel workflow, often used in open-source communities
+  \end{itemize}
+}
+{Lecture - Advanced source organization}
+{
+  \begin{itemize}
+  \item Referencing Git repositories from another repository with {\em git submodules}
+  \item Managing easily a large number of Git repositories with Google's {\em repo} tool
+  \item Rewriting branches in an automated way with {\em filter-branch}
+  \end{itemize}
+}
+
+\end{document}

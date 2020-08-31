@@ -1,0 +1,361 @@
+\section{Application development workflow}
+
+\begin{frame}
+  \frametitle{Recommended workflows}
+  \begin{itemize}
+    \item Different development workflows are possible given the
+      needs:
+      \begin{itemize}
+        \item Low-level application development (bootloader, kernel).
+        \item Application development.
+        \item Temporary modifications on an external project (bug
+          fixes, security fixes).
+      \end{itemize}
+    \item Three workflows exists for theses needs: the \code{SDK},
+      \code{devtool} and \code{quilt}.
+  \end{itemize}
+\end{frame}
+
+\subsection{The Yocto Project SDK}
+
+\begin{frame}
+  \frametitle{Overview}
+  \begin{itemize}
+    \item An SDK (Software Development Kit) is a set of tools allowing
+      the development of applications for a given target (operating
+      system, platform, environment\dots).
+    \item It generally provides a set of tools including:
+      \begin{itemize}
+        \item Compilers or cross-compilers.
+        \item Linkers.
+        \item Library headers.
+        \item Debuggers.
+        \item Custom utilities.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Advantages}
+  \begin{itemize}
+    \item The Yocto Project is often used to build images for embedded
+      targets.
+      \begin{itemize}
+        \item This often requires a special toolchain, to cross
+          compile the software.
+        \item Some libraries headers may be specific to the target
+          and not available on the developers' computers.
+      \end{itemize}
+    \item A self-sufficient environment makes development easier and
+      avoids many errors.
+    \item Long manuals are not necessary, the only thing required is
+      the SDK!
+    \item Using the SDK to develop an application limits the risks of
+      dependency issues when running it on the target.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The Yocto Project SDK}
+  \begin{itemize}
+    \item The Poky reference system is used to generate images, by
+      building many applications and doing a lot of configuration work.
+      \begin{itemize}
+        \item When developing an application, we only care about the
+          application itself.
+        \item We want to be able to develop, test and debug easily.
+      \end{itemize}
+    \item The Yocto Project SDK is an application development SDK,
+      which can be generated to provide a full environment compatible
+      with the target.
+    \item It includes a toolchain, libraries headers and all the
+      needed tools.
+    \item This SDK can be installed on any computer and is
+      self-contained. The presence of Poky is not required for the SDK
+      to fully work.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Available SDKs}
+  \begin{itemize}
+    \item Two different SDKs can be generated:
+      \begin{itemize}
+        \item A generic SDK, including:
+          \begin{itemize}
+            \item A toolchain.
+            \item Common tools.
+            \item A collection of basic libraries.
+          \end{itemize}
+        \item An image-based SDK, including:
+          \begin{itemize}
+            \item The generic SDK.
+            \item The sysroot matching the target root filesystem.
+            \item Its toolchain is self-contained (linked to an
+              SDK embedded libc).
+          \end{itemize}
+      \end{itemize}
+    \item The SDKs generated with Poky are distributed in the form of a
+      shell script.
+    \item Executing this script extracts the tools and sets up the
+      environment.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The generic SDK}
+  \begin{itemize}
+    \item Mainly used for low-level development, where only the
+      toolchain is needed:
+      \begin{itemize}
+        \item Bootloader development.
+        \item Kernel development.
+      \end{itemize}
+    \item The recipe \code{meta-toolchain} generates this SDK:
+      \begin{itemize}
+        \item \code{bitbake meta-toolchain}
+      \end{itemize}
+    \item The generated script, containing all the tools for this SDK,
+      is in:
+      \begin{itemize}
+        \item \code{$BUILDDIR/tmp/deploy/sdk}
+        \item Example:
+          \code{poky-glibc-x86_64-meta-toolchain-cortexa8hf-neon-toolchain-2.5.sh}
+      \end{itemize}
+    \item The SDK will be configured to be compatible with the
+      specified \code{MACHINE}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The image-based SDK}
+  \begin{itemize}
+    \item Used to develop applications running on the target.
+    \item One task is dedicated to the process. The task behavior
+      can vary between the images.
+      \begin{itemize}
+        \item \code{populate_sdk}
+      \end{itemize}
+    \item To generate an SDK for \code{core-image-minimal}:
+      \begin{itemize}
+        \item \code{bitbake -c populate_sdk core-image-minimal}
+      \end{itemize}
+    \item The generated script, containing all the tools for this SDK,
+      is in:
+      \begin{itemize}
+        \item \code{$BUILDDIR/tmp/deploy/sdk}
+        \item Example:
+          \code{poky-glibc-x86_64-core-image-minimal-cortexa8hf-neon-toolchain-2.5.sh}
+      \end{itemize}
+    \item The SDK will be configured to be compatible with the
+      specified \code{MACHINE}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{SDK format}
+  \begin{itemize}
+    \item Both SDKs are distributed as bash scripts.
+    \item These scripts self extract themselves to install the
+      toolchains and the files they provide.
+    \item To install an SDK, retrieve the generated script and execute
+      it.
+      \begin{itemize}
+        \item The script asks where to install the SDK. Defaults to
+          \code{/opt/poky/<version>}
+        \item Example: \code{/opt/poky/2.5}
+        \begin{block}{}
+          \begin{minted}[fontsize=\scriptsize]{console}
+$ ./poky-glibc-x86_64-meta-toolchain-cortexa8hf-neon-toolchain-2.5.sh
+Poky (Yocto Project Reference Distro) SDK installer version 2.5
+===============================================================
+Enter target directory for SDK (default: /opt/poky/2.5):
+You are about to install the SDK to "/opt/poky/2.5". Proceed[Y/n]?
+Extracting SDK.................done
+Setting it up...done
+SDK has been successfully set up and is ready to be used.
+Each time you wish to use the SDK in a new shell session, you need to source
+the environment setup script e.g.
+ $ . /opt/poky/2.5/environment-setup-cortexa8hf-neon-poky-linux-gnueabi
+          \end{minted}
+        \end{block}
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Use the SDK}
+  \begin{itemize}
+    \item To use the SDK, a script is available to set up the
+      environment:
+      \begin{block}{}
+        \begin{minted}[fontsize=\scriptsize]{console}
+$ cd /opt/poky/2.5
+$ source ./environment-setup-cortexa8hf-neon-poky-linux-gnueabi
+        \end{minted}
+      \end{block}
+    \item The \code{PATH} is updated to take into account the binaries
+      installed alongside the SDK.
+    \item Environment variables are exported to help using the tools.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{SDK installation}
+  \begin{description}
+    \item[environment-setup-cortexa8hf-neon-poky-linux-gnueabi] Exports environment
+      variables.
+    \item[site-config-cortexa8hf-neon-poky-linux-gnueabi] Variables used during the
+      toolchain creation
+    \item[sysroots] SDK binaries, headers and libraries. Contains
+      one directory for the host and one for the target.
+    \item[version-cortexa8hf-neon-poky-linux-gnueabi] Version information.
+  \end{description}
+\end{frame}
+
+\begin{frame}
+  \frametitle{SDK environment variables}
+  \begin{description}
+    \item[CC] Full path to the C compiler binary.
+    \item[CFLAGS] C flags, used by the C compiler.
+    \item[CXX] C++ compiler.
+    \item[CXXFLAGS] C++ flags, used by \code{CPP}
+    \item[LD] Linker.
+    \item[LDFLAGS] Link flags, used by the linker.
+    \item[ARCH] For kernel compilation.
+    \item[CROSS\_COMPILE] For kernel compilation.
+    \item[GDB] SDK GNU Debugger.
+    \item[OBJDUMP] SDK objdump.
+  \end{description}
+  \begin{itemize}
+    \item To see the full list, open the environment script.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Examples}
+  \begin{itemize}
+    \item To build an application for the target:
+      \begin{block}{}
+        \begin{minted}{console}
+$ $CC -o example example.c
+        \end{minted}
+      \end{block}
+    \item The \code{LDFLAGS} variables is set to be used with the C
+      compiler (\code{gcc}).
+      \begin{itemize}
+        \item When building the Linux kernel, unset this variable.
+          \begin{block}{}
+            \begin{minted}{console}
+$ unset LDFLAGS
+$ make menuconfig
+$ make
+            \end{minted}
+          \end{block}
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Devtool}
+
+\begin{frame}
+  \frametitle{Overview}
+  \begin{itemize}
+    \item \code{Devtool} is a set of utilities to ease the integration
+    and the development of OpenEmbedded recipes.
+    \item It can be used to:
+      \begin{itemize}
+        \item Generate a recipe for a given upstream application.
+        \item Modify an existing recipe and its associated sources.
+        \item Upgrade an existing recipe to use a newer upstream
+          application.
+      \end{itemize}
+    \item \code{Devtool} adds a new layer, automatically managed, in
+      \code{$BUILDDIR/workspace/}.
+    \item It then adds or appends recipes to this layer so that the
+      recipes point to a local path for their sources. In
+      \code{$BUILDDIR/workspace/sources/}.
+      \begin{itemize}
+        \item Local sources are managed by \code{git}.
+        \item All modifications made locally should be commited.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\code{devtool} usage 1/3}
+  There are three ways of creating a new \code{devtool} project:
+  \begin{itemize}
+    \item To create a new recipe:
+      \code{devtool add <recipe> <fetchuri>}
+      \begin{itemize}
+        \item Where \code{recipe} is the recipe's name.
+        \item \code{fetchuri} can be a local path or a remote {\em
+          uri}.
+      \end{itemize}
+    \item To modify an existing recipe: \code{devtool modify <recipe>}
+    \item To upgrade a given recipe:
+      \code{devtool upgrade -V <version> <recipe>}
+      \begin{itemize}
+        \item Where \code{version} is the new version of the upstream
+          application.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\code{devtool} usage 2/3}
+  Once a \code{devtool} project is started, commands can be issued:
+  \begin{itemize}
+    \item \code{devtool edit-recipe <recipe>}: edit \code{recipe} in a text
+      editor (as defined by the \code{EDITOR} environment variable).
+    \item \code{devtool build <recipe>}: build the given
+      \code{recipe}.
+    \item \code{devtool build-image <image>}: build \code{image} with
+      the additional \code{devtool} recipes' packages.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\code{devtool} usage 3/3}
+  \begin{itemize}
+    \item \code{devtool deploy-target <recipe> <target>}: upload the
+      \code{recipe}'s packages on \code{target}, which is a live
+      running target with an SSH server running (\code{user@address}).
+    \item \code{devtool update-recipe <recipe>}: generate patches from
+      git commits made locally.
+    \item \code{devtool reset <recipe>}: remove \code{recipe} from the
+      control of \code{devtool}. Standard layers and remote sources
+      are used again as usual.
+  \end{itemize}
+\end{frame}
+
+\subsection{Quilt}
+
+\begin{frame}
+  \frametitle{Overview}
+  \begin{itemize}
+    \item Quilt is a utility to manage patches which can be used
+      without having a clean source tree.
+    \item It can be used to create patches for recipes already
+      available in the build system.
+    \item Be careful when using this workflow: the modifications won't
+      persist across builds!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Using Quilt}
+  \begin{enumerate}
+    \item Find the recipe working directory in
+      \code{$BUILDDIR/tmp/work/}.
+    \item Create a new \code{Quilt} patch:
+      \code{$ quilt new topic.patch}
+    \item Add files to this patch: \code{$ quilt add file0.c file1.c}
+    \item Make the modifications by editing the files.
+    \item Test the modifications:
+      \code{$ bitbake -c compile -f recipe}
+    \item Generate the patch file: \code{$ quilt refresh}
+    \item Move the generated patch into the recipe's directory.
+  \end{enumerate}
+\end{frame}

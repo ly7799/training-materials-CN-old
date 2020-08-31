@@ -1,0 +1,279 @@
+\section{Kernel debugging}
+
+\begin{frame}[fragile]
+  \frametitle{Debugging using messages (1)}
+  Three APIs are available
+  \begin{itemize}
+  \item The old \kfunc{printk}, no longer recommended for new debugging
+    messages
+  \item The \code{pr_*()} family of functions: \kfunc{pr_emerg},
+    \kfunc{pr_alert}, \kfunc{pr_crit}, \kfunc{pr_err},
+    \kfunc{pr_warning}, \kfunc{pr_notice}, \kfunc{pr_info},
+    \kfunc{pr_cont} \\
+    and the special \kfunc{pr_debug} (see next pages)
+    \begin{itemize}
+    \item Defined in \kfile{include/linux/printk.h}
+    \item They take a classic format string with arguments
+    \item Example:
+      \begin{minted}{c}
+pr_info("Booting CPU %d\n", cpu);
+      \end{minted}
+      \begin{verbatim}
+[  202.350064] Booting CPU 1
+      \end{verbatim}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Debugging using messages (2)}
+  \begin{itemize}
+  \item The \code{dev_*()} family of functions: \kfunc{dev_emerg},
+    \kfunc{dev_alert}, \kfunc{dev_crit}, \kfunc{dev_err},
+    \kfunc{dev_warn}, \kfunc{dev_notice}, \kfunc{dev_info} \\
+    and the special \kfunc{dev_dbg} (see next page)
+    \begin{itemize}
+    \item They take a pointer to \kstruct{device} as first
+      argument, and then a format string with arguments
+    \item Defined in \kfile{include/linux/device.h}
+    \item To be used in drivers integrated with the Linux device
+      model
+    \item Example:
+      \begin{minted}{c}
+dev_info(&pdev->dev, "in probe\n");
+      \end{minted}
+      \begin{verbatim}
+[   25.878382] serial 48024000.serial: in probe
+[   25.884873] serial 481a8000.serial: in probe
+      \end{verbatim}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{pr\_debug() and dev\_dbg()}
+  \begin{itemize}
+  \item When the driver is compiled with \code{DEBUG} defined, all
+    these messages are compiled and printed at the debug level.
+    \code{DEBUG} can be defined by \codewithhash{\#define DEBUG} at the
+    beginning of the driver, or using
+    \code{ccflags-$(CONFIG_DRIVER) += -DDEBUG} in the \code{Makefile}
+  \item When the kernel is compiled with \kconfig{CONFIG_DYNAMIC_DEBUG},
+    then these messages can dynamically be enabled on a per-file,
+    per-module or per-message basis
+    \begin{itemize}
+    \item Details in \kerneldochtml{admin-guide/dynamic-debug-howto}
+    \item Very powerful feature to only get the debug messages you're
+      interested in.
+    \end{itemize}
+  \item When neither \code{DEBUG} nor \kconfig{CONFIG_DYNAMIC_DEBUG} are
+    used, these messages are not compiled in.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Configuring the priority}
+  \begin{itemize}
+  \item Each message is associated to a priority, ranging from \code{0} for
+    emergency to \code{7} for debug, as specified in
+    \kfile{include/linux/kern_levels.h}.
+  \item All the messages, regardless of their priority, are stored in
+    the kernel log ring buffer
+    \begin{itemize}
+    \item Typically accessed using the \code{dmesg} command
+    \end{itemize}
+  \item Some of the messages may appear on the console, depending on
+    their priority and the configuration of
+    \begin{itemize}
+    \item The \code{loglevel} kernel parameter, which defines the
+      priority number below which messages are displayed on the console.
+      Details in \kerneldochtml{admin-guide/kernel-parameters}.
+      \newline Examples: \code{loglevel=0}: no message, \code{loglevel=8}: all messages
+    \item The value of \code{/proc/sys/kernel/printk}, which allows to
+      change at runtime the priority above which messages are
+      displayed on the console. Details in
+      \kerneldoctext{sysctl/kernel.txt}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{DebugFS}
+  A virtual filesystem to export debugging information to user space.
+  \begin{itemize}
+  \item Kernel configuration: \kconfig{CONFIG_DEBUG_FS}
+    \begin{itemize}
+    \item \code{Kernel hacking -> Debug Filesystem}
+    \end{itemize}
+  \item The debugging interface disappears when Debugfs is
+    configured out.
+  \item You can mount it as follows:
+    \begin{itemize}
+    \item \code{sudo mount -t debugfs none /sys/kernel/debug}
+    \end{itemize}
+  \item First described on \url{https://lwn.net/Articles/115405/}
+  \item API documented in the Linux Kernel Filesystem API:
+    \kerneldochtmlsection{filesystems}{the-debugfs-filesystem}
+    {The debugfs filesystem}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{DebugFS API}
+  \begin{itemize}
+  \item Create a sub-directory for your driver:
+    \begin{itemize}
+    \item \mint{c}+struct dentry *debugfs_create_dir(const char *name,+
+      \mint{c}+struct dentry *parent);+
+    \end{itemize}
+  \item Expose an integer as a file in DebugFS. Example:
+    \begin{itemize}
+    \item \mint{c}+struct dentry *debugfs_create_u8+
+      \mint{c}+(const char *name, mode_t mode, struct dentry *parent,+
+      \mint{c}+u8 *value);+
+      \begin{itemize}
+      \item \code{u8}, \code{u16}, \code{u32}, \code{u64} for decimal representation
+      \item \code{x8}, \code{x16}, \code{x32}, \code{x64} for hexadecimal representation
+      \end{itemize}
+    \end{itemize}
+  \item Expose a binary blob as a file in DebugFS:
+    \begin{itemize}
+    \item \mint{c}+struct dentry *debugfs_create_blob(const char *name,+
+      \mint{c}+mode_t mode, struct dentry *parent,+
+      \mint{c}+struct debugfs_blob_wrapper *blob);+
+    \end{itemize}
+  \item Also possible to support writable DebugFS files or customize
+    the output using the more generic \kfunc{debugfs_create_file}
+    function.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Deprecated debugging mechanisms}
+  Some additional debugging mechanisms, whose usage is now
+  considered deprecated
+  \begin{itemize}
+  \item Adding special \code{ioctl()} commands for debugging
+    purposes. DebugFS is preferred.
+  \item Adding special entries in the \code{proc} filesystem. DebugFS is
+    preferred.
+  \item Adding special entries in the \code{sysfs} filesystem. DebugFS is
+    preferred.
+  \item Using \kfunc{printk}. The \code{pr_*()} and \code{dev_*()}
+    functions are preferred.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Using Magic SysRq}
+  \begin{itemize}
+  \item Allows to run multiple debug / rescue commands even when the
+    kernel seems to be in deep trouble
+    \begin{itemize}
+    \item On PC: press \code{[Alt]} + \code{[Prnt Scrn]} + \code{<character>}
+	  simultaneously (\code{[SysRq]} = \code{[Alt]} + \code{[Prnt Scrn]})
+    \item On embedded: in the console, send a break character
+      (Picocom: press \code{[Ctrl]} + \code{a} followed by \code{[Ctrl]}
+      + \code{\ }), then press \code{<character>}
+    \end{itemize}
+  \item Example commands:
+    \begin{itemize}
+    \item \code{h}: show available commands 
+    \item \code{s}: sync all mounted filesystems
+    \item \code{b}: reboot the system
+    \item \code{n}: makes RT processes nice-able.
+    \item \code{w}: shows the kernel stack of all sleeping processes
+    \item \code{t}: shows the kernel stack of all running processes
+    \item You can even register your own!
+    \end{itemize}
+  \item Detailed in \kerneldochtml{admin-guide/sysrq}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{kgdb - A kernel debugger}
+  \begin{itemize}
+  \item The execution of the kernel is fully controlled by \code{gdb}
+    from another machine, connected through a serial line.
+  \item Can do almost everything, including inserting breakpoints in
+    interrupt handlers.
+  \item Feature supported for the most popular CPU architectures
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Using kgdb 1/2}
+  \begin{itemize}
+  \item Details available in the kernel documentation:
+    \kerneldochtml{dev-tools/kgdb}
+  \item Recommended to turn on \kconfig{CONFIG_FRAME_POINTER} to aid in
+    producing more reliable stack backtraces in \code{gdb}.
+  \item You must include a kgdb I/O driver. One of them is \code{kgdb} over
+    serial console (\code{kgdboc}: \code{kgdb} over console, enabled by
+    \kconfig{CONFIG_KGDB_SERIAL_CONSOLE})
+  \item Configure \code{kgdboc} at boot time by passing to the kernel:
+    \begin{itemize}
+    \item \code{kgdboc=<tty-device>,<bauds>}.
+    \item For example: \code{kgdboc=ttyS0,115200}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Using kgdb 2/2}
+  \begin{itemize}
+  \item Then also pass \code{kgdbwait} to the kernel: it makes
+    \code{kgdb} wait for a debugger connection.
+  \item Boot your kernel, and when the console is initialized,
+    interrupt the kernel with a break character and then \code{g}
+    in the serial console (see our {\em Magic SysRq} explanations).
+  \item On your workstation, start \code{gdb} as follows:
+    \begin{itemize}
+    \item \code{arm-linux-gdb ./vmlinux}
+    \item \code{(gdb) set remotebaud 115200}
+    \item \code{(gdb) target remote /dev/ttyS0}
+    \end{itemize}
+  \item Once connected, you can debug a kernel the way you would debug
+    an application program.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Debugging with a JTAG interface}
+  Two types of JTAG dongles
+  \begin{itemize}
+  \item The ones offering a \code{gdb} compatible interface, over a
+    serial port or an Ethernet connection. \code{gdb} can directly
+    connect to them.
+  \item The ones not offering a gdb compatible interface are generally
+    supported by OpenOCD (Open On Chip Debugger):
+    \url{http://openocd.sourceforge.net/}
+    \begin{itemize}
+    \item OpenOCD is the bridge between the gdb debugging language
+      and the JTAG interface of the target CPU.
+    \item See the very complete documentation:
+      \url{http://openocd.org/documentation/}
+    \item For each board, you'll need an OpenOCD configuration file
+      (ask your supplier)
+    \end{itemize}
+  \end{itemize}
+   \begin{center}
+     \includegraphics[width=\textwidth]{slides/kernel-driver-development-debugging/jtag.pdf}
+   \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{More kernel debugging tips}
+  \begin{itemize}
+  \item Make sure \kconfig{CONFIG_KALLSYMS_ALL} is enabled
+    \begin{itemize}
+    \item Is turned on by default
+    \item To get oops messages with symbol names instead of raw addresses
+    \end{itemize}
+  \item On ARM, if your kernel doesn't boot or hangs without any
+    message, you can activate early debugging options
+    (\kconfig{CONFIG_DEBUG_LL} and \kconfig{CONFIG_EARLYPRINTK}), and add
+    \code{earlyprintk} to the kernel command line.
+  \end{itemize}
+\end{frame}

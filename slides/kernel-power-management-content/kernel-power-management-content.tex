@@ -1,0 +1,289 @@
+\begin{frame}
+  \frametitle{PM building blocks}
+  \begin{itemize}
+  \item Several power management \emph{building blocks}
+    \begin{itemize}
+    \item Suspend and resume
+    \item CPUidle
+    \item Runtime power management
+    \item Frequency and voltage scaling
+    \end{itemize}
+  \item Independent \emph{building blocks} that can be improved
+    gradually during development
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Clock framework (1)}
+  \begin{itemize}
+  \item Generic framework to manage clocks used by devices in the
+    system
+  \item Allows to reference count clock users and to shutdown the
+    unused clocks to save power
+  \item Simple API described in \kfile{include/linux/clk.h}.
+    \begin{itemize}
+    \item \kfunc{clk_get} to get a reference to a clock
+    \item \kfunc{clk_enable} to start the clock
+    \item \kfunc{clk_disable} to stop the clock
+    \item \kfunc{clk_put} to free the clock source
+    \item \kfunc{clk_get_rate} to get the current rate
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Clock framework (2)}
+  The common clock framework
+  \begin{itemize}
+  \item Allows to declare the available clocks and their association
+    to devices in the Device Tree (preferred) or statically in the
+    source code (old method)
+  \item Provides a {\em debugfs} representation of the clock tree
+  \item Is implemented in \kdir{drivers/clk}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Diagram overview of the common clock framework}
+  \begin{center}
+    \includegraphics[width=\textwidth]{slides/kernel-power-management-content/clock-framework.pdf}
+\end{center}
+\end{frame}
+
+\begin{frame}{Clock framework (3)}
+  The interface of the  CCF divided into two halves:
+  \begin{itemize}
+  \item Common Clock Framework core
+    \begin{itemize}
+    \item Common definition of \kstruct{clk}
+    \item Common implementation of the \code{clk.h} API (defined in
+      \kfile{drivers/clk/clk.c})
+    \item \kstruct{clk_ops}: operations invoked by the clk API
+      implementation
+    \item Not supposed to be modified when adding a new driver
+    \end{itemize}
+  \item Hardware-specific
+    \begin{itemize}
+    \item Callbacks registered with \kstruct{clk_ops} and the
+      corresponding hardware-specific structures
+    \item Has to be written for each new hardware clock
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Clock framework (4)}
+  Hardware clock operations: device tree
+  \begin{itemize}
+  \item The \textbf{device tree} is the \textbf{mandatory way} to
+    declare a clock and to get its resources, as for any other
+    driver using DT we have to:
+    \begin{itemize}
+    \item \textbf{Parse} the device tree to \textbf{setup} the
+      clock: the resources but also the properties are retrieved.
+    \item Declare the \textbf{compatible} clocks and associate it
+      with an \textbf{initialization} function using
+      \kfunc{CLK_OF_DECLARE}
+    \item Example: \kfile{drivers/clk/at91/clk-pll.c}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Suspend and resume}
+  \begin{itemize}
+  \item Infrastructure in the kernel to support suspend and resume
+  \item System on Chip hooks
+    \begin{itemize}
+    \item \code{prepare()}, \code{enter()}, \code{finish()},
+      \code{valid()} in a \kstruct{platform_suspend_ops} structure
+    \item Registered using the \kfunc{suspend_set_ops} function
+    \item See \kfile{arch/arm/mach-at91/pm.c}
+    \end{itemize}
+  \item Device drivers
+    \begin{itemize}
+    \item \code{suspend()} and \code{resume()} hooks in the
+      \code{*_driver} structures (\kstruct{platform_driver},
+      \kstruct{usb_driver}, etc.)
+    \item See \kfile{drivers/net/ethernet/cadence/macb_main.c}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Triggering suspend}
+  \begin{itemize}
+  \item \kstruct{suspend_ops} functions are called by the
+    \kfunc{enter_state} function.
+  \item \kfunc{enter_state} also takes care of executing the suspend
+    and resume functions for your devices.
+  \item The execution of this function can be triggered from
+    user space. To suspend to RAM:
+    \begin{itemize}
+    \item \code{echo mem > /sys/power/state}
+    \end{itemize}
+  \item Can also use the s2ram program from
+    \url{http://suspend.sourceforge.net/}
+  \item Read \kfile{kernel/power/suspend.c}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Runtime power management}
+  \begin{itemize}
+  \item According to the kernel configuration interface: \emph{Enable
+      functionality allowing I/O devices to be put into energy-saving
+      (low power) states at run time (or autosuspended) after a
+      specified period of inactivity and woken up in response to a
+      hardware-generated wake-up event or a driver's request.}
+  \item New hooks must be added to the drivers:
+    \code{runtime_suspend()}, \code{runtime_resume()},
+    \code{runtime_idle()}
+  \item API and details on \kerneldoctext{power/runtime_pm.txt}
+  \item See also Kevin Hilman's presentation at ELC Europe 2010:
+    \url{https://elinux.org/images/c/cd/ELC-2010-khilman-Runtime-PM.odp}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Saving power in the idle loop}
+  \begin{itemize}
+  \item The idle loop is what you run when there's nothing left to run
+    in the system.
+  \item Implemented in all architectures in
+    \code{arch/<arch>/kernel/process.c}
+  \item Example to read: look for \code{cpu_idle} in
+    \kfile{arch/arm/kernel/process.c}
+  \item Each ARM cpu defines its own \code{arch_idle} function.
+  \item The CPU can run power saving HLT instructions, enter NAP mode,
+    and even disable the timers (tickless systems).
+  \item See also \url{https://en.wikipedia.org/wiki/Idle_loop}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Managing idle}
+  Adding support for multiple idle levels
+  \begin{itemize}
+  \item Modern CPUs have several sleep states offering different
+    power savings with associated wake up latencies
+  \item The {\em dynamic tick} feature allows to remove the
+    periodic tick to save power, and to know when the next event is
+    scheduled, for smarter sleeps.
+  \item CPUidle infrastructure to change sleep states
+    \begin{itemize}
+    \item Platform-specific driver defining sleep states and
+      transition operations
+    \item Platform-independent governors (ladder and menu)
+    \item Available in particular for x86/ACPI and most ARM SoCs
+    \item See \kerneldoctext{cpuidle/} in kernel sources.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{PowerTOP}
+  \url{https://01.org/powertop/}
+  \begin{itemize}
+  \item With dynamic ticks, allows to fix parts of kernel code and
+    applications that wake up the system too often.
+  \item PowerTOP allows to track the worst offenders
+  \item Now available on ARM cpus implementing CPUidle
+  \item Also gives you useful hints for reducing power.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Frequency and voltage scaling (1)}
+  Frequency and voltage scaling possible through the
+  \code{cpufreq} kernel infrastructure.
+  \begin{itemize}
+  \item Generic infrastructure: \kfile{drivers/cpufreq/cpufreq.c} and
+    \kfile{include/linux/cpufreq.h}
+  \item Generic governors, responsible for deciding frequency and
+    voltage transitions
+    \begin{itemize}
+    \item \code{performance}: maximum frequency
+    \item \code{powersave}: minimum frequency
+    \item \code{ondemand}: measures CPU consumption to adjust frequency
+    \item \code{conservative}: often better than
+      \code{ondemand}. Only increases frequency gradually when the
+      CPU gets loaded.
+    \item \code{userspace}: leaves the decision to a user space
+      daemon.
+    \end{itemize}
+  \item This infrastructure can be controlled from
+    \code{/sys/devices/system/cpu/cpu<n>/cpufreq/}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Frequency and voltage scaling (2)}
+  \begin{itemize}
+  \item CPU drivers in \kdir{drivers/cpufreq}.  Example:
+    \kfile{drivers/cpufreq/omap-cpufreq.c}
+  \item Must implement the operations of the \code{cpufreq_driver}
+    structure and register them using \code{cpufreq_register_driver()}
+    \begin{itemize}
+    \item \code{init()} for initialization
+    \item \code{exit()} for cleanup
+    \item \code{verify()} to verify the user-chosen policy
+    \item \code{setpolicy()} or \code{target()} to actually perform
+      the frequency change
+    \end{itemize}
+  \item See \kerneldoctext{cpu-freq/} for useful explanations
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Regulator framework}
+  \begin{itemize}
+  \item Modern embedded hardware have hardware responsible for voltage
+    and current regulation
+  \item The regulator framework allows to take advantage of this
+    hardware to save power when parts of the system are unused
+    \begin{itemize}
+    \item A consumer interface for device drivers (i.e users)
+    \item Regulator driver interface for regulator drivers
+    \item Machine interface for board configuration
+    \item sysfs interface for user space
+    \end{itemize}
+  \item See \kerneldoctext{power/regulator/} in kernel sources.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{BSP work for a new board}
+  In case you just need to create a BSP for your board, and your
+  CPU already has full PM support, you should just need to:
+  \begin{itemize}
+  \item Create clock definitions and bind your devices to them.
+  \item Implement PM handlers (suspend, resume) in the drivers for
+    your board specific devices.
+  \item Implement runtime PM handlers in your drivers.
+  \item Implement board specific power management if needed (mainly
+    battery management)
+  \item Implement regulator framework hooks for your board if
+    needed.
+  \item All other parts of the PM infrastructure should be already
+    there: suspend / resume, cpuidle, cpu frequency and voltage
+    scaling.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Useful resources}
+  \begin{itemize}
+  \item \kerneldoctext{power/} in the Linux kernel sources.
+    \begin{itemize}
+    \item Will give you many useful details.
+    \end{itemize}
+  \item Introduction to kernel power management, Kevin Hilman, Linaro
+    \begin{itemize}
+      \item \url{https://elinux.org/images/d/dd/Intro_Kernel_PM.svg}
+      \item \url{https://www.youtube.com/watch?v=Um0oRanCtzY}
+    \end{itemize}
+  \item Tips and ideas for prolonging battery life (Amit Kucheria)
+    \begin{itemize}
+    \item \url{https://j.mp/fVdxKh}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
