@@ -1,15 +1,18 @@
 #!/bin/bash
 #variable
-ssh=https://github.com/ly7799/training-materials-cn.git
+ssh=git@github.com:ly7799/training-materials-cn.git
 note=$1
 #copy training
 cp -r /home/luojie/github/training-materials/* .
-cp /home/luojie/github/training-materials/.gitignore .
+
+#cp /home/luojie/github/training-materials/.gitignore .
+
 #git
-git init
+#git init
 git remote -v
-#git remote remove origin
+git remote remove origin
 git remote add origin $ssh
+git remtoe -v
 git add .
 git commit -m "$note"
 git push -u origin master

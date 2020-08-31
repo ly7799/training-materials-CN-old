@@ -4,3 +4,7 @@ out/
 *~
 *.autosave
 *.tar.xz
+
+
+
+./copy_training-materials-en.sh
