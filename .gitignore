@@ -7,5 +7,5 @@ out/
 
 
 
-./copy_training-materials-en.sh
-./copy_training-materials-en.sh.backup
+copy_training-materials-en.sh
+copy_training-materials-en.sh.backup
